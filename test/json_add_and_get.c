@@ -17,10 +17,10 @@ int main()
   // second key will be a char*
 
   int32_t key1 = -525;
-  //char* key2 = "string literal";
+  char* key2 = "string literal";
 
   json_add_item(json, INT32, "key1", &key1);
-  //json_add_item(json, STRING, "key2", &key2);
+  json_add_item(json, STRING, "key2", &key2);
 
   // fetch items back
   int32_t key1_get = *(int32_t*)json_get(json, "key1");
@@ -31,14 +31,12 @@ int main()
     goto cleanup;
   }
 
-  /*
   char* key2_get = *(char**)json_get(json, "key2");
   if (strcmp(key2_get, key2) != 0)
   {
     fprintf(stderr, "expected key2 to have value '%s' but got '%s'\n", key2, key2_get);
     goto cleanup;
   }
-  */
 
   // check key that doesn't exist (should be null)
   uintptr_t noexist = json_get(json, "dummy");
