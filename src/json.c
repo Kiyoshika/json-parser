@@ -77,6 +77,9 @@ json_add_item(
     case INT32:
       new_item.value.int32 = *(int32_t*)value;
       break;
+    case DECIMAL:
+      new_item.value.decimal = *(double*)value;
+      break;
     case STRING:
       new_item.value.str = value; // this is a heap copy
       break;
@@ -136,6 +139,9 @@ json_get(
       {
         case INT32:
           return &current_item->value.int32;
+        case DECIMAL:
+          return &current_item->value.decimal;
+          break;
         case STRING:
           return current_item->value.str;
         case NOTYPE:
