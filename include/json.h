@@ -56,7 +56,7 @@ json_get(
  const char* const key);
 
 struct json_t*
-json_parse(
+json_parse_from_string(
   const char* const json_string);
 
 #endif

@@ -116,7 +116,7 @@ json_get(
 }
 
 struct json_t*
-json_parse(
+json_parse_from_string(
   const char* const json_string)
 {
   struct json_t* json = json_create();
