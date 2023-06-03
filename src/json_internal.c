@@ -93,7 +93,7 @@ _get_next_expected_token(
       return NONE;
 
     case QUOTE:
-      return QUOTE | TEXT | COLON | CLOSE_BODY;
+      return QUOTE | TEXT | COLON | CLOSE_BODY | COMMA;
 
     case COLON:
       return QUOTE | TEXT | NUMERIC;
@@ -147,6 +147,14 @@ _json_add_item(
       if (!parsed_value_copy)
         return false;
       success = json_add_item(json, STRING, parse_info->parsed_key, parsed_value_copy);
+      break;
+    }
+
+    case DECIMAL:
+    {
+      char* endptr;
+      double cast_value = strtod(parse_info->parsed_value, &endptr);
+      success = json_add_item(json, DECIMAL, parse_info->parsed_key, &cast_value);
       break;
     }
 
@@ -260,14 +268,21 @@ _perform_token_action(
           && parse_info->parsed_value_type == NOTYPE 
           && value_len == 0)
       {
-        parse_info->parsed_value_type = INT32;
+        if (current_char == '.')
+          parse_info->parsed_value_type = DECIMAL;
+        else
+          parse_info->parsed_value_type = INT32;
+
         if (!_json_append_char_to_value(parse_info, current_char))
           return false;
       }
 
       else if (parse_info->parsing_value
-               && parse_info->parsed_value_type == INT32)
+               && (parse_info->parsed_value_type == DECIMAL || parse_info->parsed_value_type == INT32))
       {
+        if (current_char == '.' && parse_info->parsed_value_type == INT32)
+          parse_info->parsed_value_type = DECIMAL;
+
         if (!_json_append_char_to_value(parse_info, current_char))
           return false;
       }
