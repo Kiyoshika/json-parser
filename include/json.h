@@ -24,9 +24,13 @@ enum json_type_e
 struct json_item_t
 {
 	enum json_type_e type;
+  union value
+  {
+    int32_t int32;
+    char* str;
+  } value;
 	char key[JSON_MAX_KEY_LEN];
   size_t key_len;
-  uintptr_t value_address;
 };
 
 struct json_t
@@ -48,9 +52,9 @@ json_add_item(
   struct json_t* const json,
   const enum json_type_e type,
   const char* const key,
-  const void* const value);
+  void* value);
 
-uintptr_t
+void*
 json_get(
  const struct json_t* const json,
  const char* const key);

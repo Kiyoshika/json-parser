@@ -30,7 +30,9 @@ enum _token_e
 struct _json_parse_info_t
 {
   char parsed_key[JSON_MAX_KEY_LEN];
-  char parsed_value[JSON_MAX_KEY_LEN];
+  char* parsed_value;
+  size_t parsed_value_len;
+  size_t parsed_value_capacity;
   enum json_type_e parsed_value_type;
   bool parsing_key;
   bool parsing_value;
@@ -59,7 +61,7 @@ _get_token_type(
 
   // NOTE: this condition must come first otherwise '.' will
   // be interpreted as TEXT type
-  if (isdigit(current_char) || current_char == '.')
+  if (isdigit(current_char) || current_char == '.' || current_char == '-')
       return NUMERIC;
 
   if  (  isalpha(current_char) 
@@ -114,8 +116,80 @@ _get_next_expected_token(
   return NONE;
 }
 
+static void
+_json_reset_parse_info(
+  struct _json_parse_info_t* const parse_info)
+{
+  // this is called after comma, so we start parsing the next key
+  memset(parse_info->parsed_key, 0, JSON_MAX_KEY_LEN);
+  memset(parse_info->parsed_value, 0, parse_info->parsed_value_len);
+  parse_info->parsed_value_len = 0; // keep the capacity as is, no point to realloc
+  parse_info->parsing_key = true;
+  parse_info->parsing_value = false;
+  parse_info->inside_quotes = false;
+  parse_info->parsed_value_type = NOTYPE;
+}
+
+// an internal version of add_item to perform type casting
+static bool 
+_json_add_item(
+  struct json_t* const json,
+  struct _json_parse_info_t* const parse_info)
+{
+  bool success = false;
+  switch (parse_info->parsed_value_type)
+  {
+    case STRING:
+    {
+      // NOTE: we make a copy since the original parsed_info->parsed_value gets
+      // free'd after json_parse_...() ends
+      char* parsed_value_copy = strdup(parse_info->parsed_value);
+      if (!parsed_value_copy)
+        return false;
+      success = json_add_item(json, STRING, parse_info->parsed_key, parsed_value_copy);
+      break;
+    }
+
+    case INT32:
+    {
+      char* endptr;
+      int32_t cast_value = strtol(parse_info->parsed_value, &endptr, 10);
+      success = json_add_item(json, INT32, parse_info->parsed_key, &cast_value);
+      break;
+    }
+
+    case NOTYPE:
+      break;
+  }
+
+  _json_reset_parse_info(parse_info);
+
+  return success;
+}
+
+static bool 
+_json_append_char_to_value(
+  struct _json_parse_info_t* const parse_info,
+  const char current_char)
+{
+  parse_info->parsed_value[parse_info->parsed_value_len++] = current_char;
+  if (parse_info->parsed_value_len == parse_info->parsed_value_capacity)
+  {
+    size_t new_capacity = parse_info->parsed_value_capacity * 2;
+    void* alloc = realloc(parse_info->parsed_value, new_capacity * sizeof(char));
+    if (!alloc)
+      return false;
+    parse_info->parsed_value = alloc;
+    parse_info->parsed_value_capacity = new_capacity;
+    memset(&parse_info->parsed_value[parse_info->parsed_value_len], 0, new_capacity + 1 - parse_info->parsed_value_len);
+  }
+
+  return true;
+}
+
 static bool 
 _perform_token_action(
+  struct json_t* const json,
   const enum _token_e current_token,
   const char current_char,
   struct _json_parse_info_t* const parse_info)
@@ -165,10 +239,8 @@ _perform_token_action(
                && parse_info->inside_quotes 
                && parse_info->parsed_value_type == STRING)
       {
-        size_t value_len = strlen(parse_info->parsed_value);
-        if (value_len == JSON_MAX_KEY_LEN - 1)
-          break;
-        parse_info->parsed_value[value_len] = current_char;
+        if (!_json_append_char_to_value(parse_info, current_char))
+          return false;
       }
 
       else
@@ -189,20 +261,33 @@ _perform_token_action(
           && value_len == 0)
       {
         parse_info->parsed_value_type = INT32;
-        parse_info->parsed_value[0] = current_char;
+        if (!_json_append_char_to_value(parse_info, current_char))
+          return false;
       }
 
       else if (parse_info->parsing_value
                && parse_info->parsed_value_type == INT32)
       {
-        if (value_len == JSON_MAX_KEY_LEN - 1)
-          break;
-
-        parse_info->parsed_value[value_len] = current_char;
+        if (!_json_append_char_to_value(parse_info, current_char))
+          return false;
       }
 
       else
         return false;
+
+      break;
+    }
+
+    case COMMA:
+    {
+      if (strlen(parse_info->parsed_key) == 0
+          || strlen(parse_info->parsed_value) == 0)
+        return false;
+
+     if (!_json_add_item(
+         json,
+         parse_info))
+       return false;
 
       break;
     }

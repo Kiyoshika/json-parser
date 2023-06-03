@@ -5,7 +5,7 @@ project(json C)
 set(CMAKE_C_STANDARD 99)
 
 #debug
-set(CMAKE_C_FLAGS "-O0 -g -Wall -Wextra -Wpedantic -fsanitize=address")
+set(CMAKE_C_FLAGS "-O0 -g -Wall -Wextra -Wpedantic")
 
 #release
 #set(CMAKE_C_FLAGS "-O2 -Wall -Wextra -Wpedantic")
