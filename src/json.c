@@ -36,10 +36,26 @@ json_free(
   // the address it's pointing to (strdup'd)
   for (size_t i = 0; i < (*json)->n_items; ++i)
   {
-    if ((*json)->items[i].type == STRING)
+    switch ((*json)->items[i].type)
     {
-      char* address = (*json)->items[i].value.str;
-      free(address);
+      case STRING:
+      {
+        char* item = (*json)->items[i].value.str;
+        free(item);
+        break;
+      }
+
+      case OBJECT:
+      {
+        struct json_t* item = (*json)->items[i].value.object;
+        json_free(&item);
+        break;
+      }
+
+      case INT32:
+      case DECIMAL:
+      case NOTYPE:
+        break;
     }
   }
 
@@ -82,6 +98,9 @@ json_add_item(
       break;
     case STRING:
       new_item.value.str = value; // this is a heap copy
+      break;
+    case OBJECT:
+      new_item.value.object = value; // this is a heap copy
       break;
     case NOTYPE:
       break;
@@ -144,6 +163,8 @@ json_get(
           break;
         case STRING:
           return current_item->value.str;
+        case OBJECT:
+          return current_item->value.object;
         case NOTYPE:
           return NULL;
       }
@@ -161,7 +182,6 @@ json_parse_from_string(
   if (!json)
     return NULL;
 
-  size_t string_idx = 0;
   // this is assuming the user supplies a null-terimated string;
   // not going to protect them from a bad input this time
   size_t string_len = strlen(json_string);
@@ -172,6 +192,8 @@ json_parse_from_string(
 
   // an object containing all the information we need while parsing
   struct _json_parse_info_t parse_info = {
+    .json_string = json_string,
+    .json_string_idx = 0,
     .parsed_key = {0},
     .parsed_value = calloc(100, sizeof(char)),
     .parsed_value_len = 0,
@@ -179,21 +201,22 @@ json_parse_from_string(
     .parsed_value_type = NOTYPE,
     .parsing_key = false,
     .parsing_value = false,
-    .inside_quotes = false
+    .inside_quotes = false,
+    .previous_token = NONE
   };
 
   if (!parse_info.parsed_value)
     goto error;
 
-  while (string_idx < string_len)
+  while (parse_info.json_string_idx < string_len)
   {
-    const char current_char = json_string[string_idx];
+    char current_char = json_string[parse_info.json_string_idx];
 
     // skip whitespace (not inside quotes)
     if ((current_char == ' ' || current_char == '\n' || current_char == '\t')
         && !parse_info.inside_quotes)
     {
-      string_idx++;
+      parse_info.json_string_idx++;
       continue;
     }
 
@@ -205,9 +228,16 @@ json_parse_from_string(
     if (!_perform_token_action(json, current_token, current_char, &parse_info))
       goto error;
 
+    // in some casese the current_char/token may be updated after an action
+    // e.g., parsing nested json body, so we just "refresh" them here
+    current_char = json_string[parse_info.json_string_idx];
+    current_token = _get_token_type(current_char);
+
     expected_token = _get_next_expected_token(current_token, parse_info.inside_quotes);
 
-    string_idx++;
+    parse_info.json_string_idx++;
+
+    parse_info.previous_token = current_token;
 
   }
 
