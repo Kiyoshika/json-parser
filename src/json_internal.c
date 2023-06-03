@@ -245,6 +245,17 @@ _json_add_item(
   return success;
 }
 
+static void
+_json_append_char_to_key(
+  struct _json_parse_info_t* const parse_info,
+  const char current_char)
+{
+  size_t key_len = strlen(parse_info->parsed_key);
+  if (key_len == JSON_MAX_KEY_LEN - 1)
+    return;
+  parse_info->parsed_key[key_len] = current_char;
+}
+
 static bool 
 _json_append_char_to_value(
   struct _json_parse_info_t* const parse_info,
@@ -313,15 +324,14 @@ _perform_token_action(
       break;
     }
 
+    // spaces and commas are technically different tokens, so
+    // by default they would be ignored
     case TEXT:
     {
       if (parse_info->parsing_key 
           && parse_info->inside_quotes)
       {
-        size_t key_len = strlen(parse_info->parsed_key);
-        if (key_len == JSON_MAX_KEY_LEN - 1)
-            break;
-        parse_info->parsed_key[key_len] = current_char;
+        _json_append_char_to_key(parse_info, current_char);
       }
 
       else if (parse_info->parsing_value 
@@ -376,14 +386,43 @@ _perform_token_action(
 
     case COMMA:
     {
-      if (strlen(parse_info->parsed_key) == 0
+      if (parse_info->parsing_key 
+          && parse_info->inside_quotes)
+      {
+        _json_append_char_to_key(parse_info, current_char);
+      }
+
+      else if (parse_info->parsing_value 
+              && parse_info->inside_quotes)
+      {
+        _json_append_char_to_value(parse_info, current_char);
+      }
+
+      else if (strlen(parse_info->parsed_key) == 0
           || strlen(parse_info->parsed_value) == 0)
         return false;
 
-     if (!_json_add_item(
-         json,
-         parse_info))
+     else if (!_json_add_item(
+               json,
+               parse_info))
        return false;
+
+      break;
+    }
+
+    case SPACE:
+    {
+      if (parse_info->parsing_key
+          && parse_info->inside_quotes)
+      {
+        _json_append_char_to_key(parse_info, current_char);
+      }
+
+      else if (parse_info->parsing_value
+          && parse_info->inside_quotes)
+      {
+        _json_append_char_to_value(parse_info, current_char);
+      }
 
       break;
     }
@@ -392,9 +431,6 @@ _perform_token_action(
       return false;
 
     case NONE: // no-op
-      return true;
-
-    case SPACE: // no-op
       return true;
 
   }
