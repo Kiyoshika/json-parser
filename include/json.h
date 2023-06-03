@@ -16,6 +16,7 @@
 
 enum json_type_e
 {
+  NOTYPE,
   INT32,
 	STRING
 };
@@ -53,5 +54,9 @@ uintptr_t
 json_get(
  const struct json_t* const json,
  const char* const key);
+
+struct json_t*
+json_parse(
+  const char* const json_string);
 
 #endif
