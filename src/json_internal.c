@@ -8,27 +8,31 @@
 enum _token_e 
 {
   // NULL token, used to initialize
-  NONE        = 0x00, //0b00000000,       
+  NONE        = 0x00,   //0b00000000,       
   // {
-  OPEN_BODY   = 0x01, //0b00000001,
+  OPEN_BODY   = 0x01,   //0b00000001,
   // }
-  CLOSE_BODY  = 0x02, //0b00000010,
+  CLOSE_BODY  = 0x02,   //0b00000010,
   // "
-  QUOTE       = 0x04, //0b00000100,
+  QUOTE       = 0x04,   //0b00000100,
   // ,
-  COMMA       = 0x08, //0b00001000,
+  COMMA       = 0x08,   //0b00001000,
   // :
-  COLON       = 0x10, //0b00010000,
+  COLON       = 0x10,   //0b00010000,
   // [A-Za-z] + punctuation
-  TEXT        = 0x20, //0b00100000,
+  TEXT        = 0x20,   //0b00100000,
   // [0-9] + decimal
-  NUMERIC     = 0x40, //0b01000000
+  NUMERIC     = 0x40,   //0b01000000
+  // ' '
+  SPACE       = 0x80,   //0b10000000
   // encountered unknown token
-  UNKNOWN     = 0x80, //0b10000000
+  UNKNOWN     = 0x100,  //0b100000000
 };
 
 struct _json_parse_info_t
 {
+  const char* const json_string;
+  size_t json_string_idx;
   char parsed_key[JSON_MAX_KEY_LEN];
   char* parsed_value;
   size_t parsed_value_len;
@@ -37,6 +41,7 @@ struct _json_parse_info_t
   bool parsing_key;
   bool parsing_value;
   bool inside_quotes;
+  enum _token_e previous_token;
 };
 
 static enum _token_e
@@ -55,6 +60,8 @@ _get_token_type(
       return COMMA;
     case ':':
       return COLON;
+    case ' ':
+      return SPACE;
   }
 
   // conditions that can't be put into switch:
@@ -81,8 +88,8 @@ _get_next_expected_token(
   const bool inside_quotes)
 {
   // if we're inside quotes, we can really be next to ANY token
-  if (inside_quotes)
-    return TEXT | NUMERIC | QUOTE | COMMA | OPEN_BODY | CLOSE_BODY | COLON;
+  if (inside_quotes || current_token == SPACE)
+    return TEXT | NUMERIC | QUOTE | COMMA | OPEN_BODY | CLOSE_BODY | COLON | SPACE;
 
   switch (current_token)
   {
@@ -90,13 +97,13 @@ _get_next_expected_token(
       return QUOTE | CLOSE_BODY;
 
     case CLOSE_BODY:
-      return NONE;
+      return CLOSE_BODY | NONE;
 
     case QUOTE:
       return QUOTE | TEXT | COLON | CLOSE_BODY | COMMA;
 
     case COLON:
-      return QUOTE | TEXT | NUMERIC;
+      return QUOTE | TEXT | NUMERIC | OPEN_BODY;
 
     case COMMA:
       return QUOTE;
@@ -111,9 +118,49 @@ _get_next_expected_token(
     case NONE:
     case UNKNOWN:
       return NONE;
+    case SPACE: // already handled before switch
+      break;
   }
 
   return NONE;
+}
+
+// iterate through a JSON string (or substring) to fetch the first
+// complete JSON body. Useful for extracting nested JSON objects
+static char*
+_json_fetch_body(
+  const char* const json_string,
+  size_t idx)
+{
+  int32_t body_count = 0;
+  size_t start_idx = idx;
+  for (; idx < strlen(json_string); ++idx)
+  {
+    switch (json_string[idx])
+    {
+      case '{':
+        body_count++;
+        break;
+      case '}':
+        body_count--;
+        break;
+    }
+
+    if (body_count < 0)
+      return NULL;
+
+    if (body_count == 0)
+    {
+      size_t substr_len = idx - start_idx + 2;
+      char* body_string = calloc(substr_len, sizeof(char));
+      if (!body_string)
+        return NULL;
+      strncat(body_string, &json_string[start_idx], substr_len - 1);
+      return body_string;
+    }
+  }
+
+  return NULL;
 }
 
 static void
@@ -139,6 +186,29 @@ _json_add_item(
   bool success = false;
   switch (parse_info->parsed_value_type)
   {
+
+    case OBJECT:
+    {
+      char* nested_json_string 
+        = _json_fetch_body(parse_info->json_string, parse_info->json_string_idx);
+
+      if (!nested_json_string)
+        return false;
+
+      struct json_t* nested_json = json_parse_from_string(nested_json_string);
+      if (!nested_json)
+        return false;
+
+      success = json_add_item(json, OBJECT, parse_info->parsed_key, nested_json);
+
+
+      // after parsing, we need to move the index pointer to after the body
+      parse_info->json_string_idx += strlen(nested_json_string);
+
+      free(nested_json_string);
+      break;
+    }
+
     case STRING:
     {
       // NOTE: we make a copy since the original parsed_info->parsed_value gets
@@ -195,6 +265,8 @@ _json_append_char_to_value(
   return true;
 }
 
+#include <stdio.h>
+
 static bool 
 _perform_token_action(
   struct json_t* const json,
@@ -205,9 +277,18 @@ _perform_token_action(
   switch (current_token)
   {
     case OPEN_BODY:
+    {
       parse_info->parsing_key = true;
       parse_info->parsing_value = false;
+
+      if (parse_info->previous_token == COLON)
+      {
+          parse_info->parsed_value_type = OBJECT;
+          if (!_json_add_item(json, parse_info))
+            return false;
+      }
       break;
+    }
 
     case CLOSE_BODY:
       parse_info->parsing_key = false;
@@ -311,6 +392,9 @@ _perform_token_action(
       return false;
 
     case NONE: // no-op
+      return true;
+
+    case SPACE: // no-op
       return true;
 
   }

@@ -19,7 +19,8 @@ enum json_type_e
   NOTYPE,
   INT32,
   DECIMAL,
-	STRING
+	STRING,
+  OBJECT
 };
 
 struct json_item_t
@@ -30,6 +31,7 @@ struct json_item_t
     int32_t int32;
     double decimal;
     char* str;
+    struct json_t* object;
   } value;
 	char key[JSON_MAX_KEY_LEN];
   size_t key_len;

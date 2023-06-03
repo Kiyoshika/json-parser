@@ -12,3 +12,8 @@ add_executable(json_parse_string_1 json_parse_string_1.c)
 target_include_directories(json_parse_string_1 PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_parse_string_1 json)
 add_test(NAME json_parse_string_1 COMMAND json_parse_string_1)
+
+add_executable(json_parse_string_nested json_parse_string_nested.c)
+target_include_directories(json_parse_string_nested PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_parse_string_nested json)
+add_test(NAME json_parse_string_nested COMMAND json_parse_string_nested)
