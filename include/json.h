@@ -24,20 +24,6 @@ enum json_type_e
   JSON_ARRAY
 };
 
-struct json_array_t
-{
-  enum json_type_e type;
-  size_t length;
-  union contents 
-  {
-    int32_t* int32;
-    double* decimal;
-    char* str;
-    struct json_t* object;
-    struct json_array_t* array;
-  } contents;
-};
-
 struct json_item_t
 {
 	enum json_type_e type;
@@ -82,5 +68,9 @@ json_get(
 struct json_t*
 json_parse_from_string(
   const char* const json_string);
+
+size_t
+json_type_to_size(
+  const enum json_type_e type);
 
 #endif

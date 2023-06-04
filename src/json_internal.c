@@ -257,68 +257,61 @@ _json_fetch_array_item_string(
   return item_string;
 }
 
+static enum json_type_e
+_get_item_type(
+  const char* const item_string)
+{
+  // ignore first set of whitespace (if any)
+  size_t idx = 0;
+  size_t len = strlen(item_string);
+  for (size_t i = 0; i < len; ++i)
+  {
+    if (isspace(item_string[i]))
+      idx++;
+    else
+      break;
+  }
+
+  if (item_string[idx] == '"')
+    return JSON_STRING;
+
+  // type will be updated to DECIMAL later if one is found while parsing
+  if (item_string[idx] >= '0' && item_string[idx] <= '9')
+    return JSON_INT32;
+
+  if (item_string[idx] == '[')
+    return JSON_ARRAY;
+
+  if (item_string[idx] == '{')
+    return JSON_OBJECT;
+
+  return JSON_NOTYPE;
+}
+
 static struct json_array_t*
 _json_parse_array(
   const char* const array_string)
 {
   size_t len = strlen(array_string);
 
-  enum json_type_e type = JSON_NOTYPE;
+  struct json_array_t* array = json_array_create();
+  if (!array)
+    return NULL;
 
-  // type is determined from the first (non-bracket) character
-  // (assuming it's not empty)
-  if (array_string[1] != ']')
-  {
-    if (array_string[1] == '"')
-      type = JSON_STRING;
-    // type will be updated to DECIMAL later if one is found while parsing
-    else if (array_string[1] >= '0' && array_string[1] <= '9')
-      type = JSON_INT32;
-    else if (array_string[1] == '[')
-      type = JSON_ARRAY;
-    else if (array_string[1] == '{')
-      type = JSON_OBJECT;
-  }
-
-  union data 
-  {
-    int32_t* int32;
-    double* decimal;
-    char* str;
-    struct json_t* object;
-    struct json_array_t* array;
-  } data;
-
-  // start with a default of 10 items, reallocating later if needed
-  size_t capacity = 10;
-  switch (type)
-  {
-    case JSON_INT32:
-      data.int32 = calloc(capacity, sizeof(int32_t));
-      break;
-    case JSON_DECIMAL:
-      data.decimal = calloc(capacity, sizeof(double));
-      break;
-    // these other cases will be handled separately
-    case JSON_STRING:
-    case JSON_OBJECT:
-    case JSON_ARRAY:
-    case JSON_NOTYPE:
-      break;
-  }
-
-  size_t current_array_idx = 0;
   char* endptr = NULL; // used for string to numeric conversions (can't declare inside switch)
+  char* item_string = NULL;
 
   // starting at 1 to skip open bracket [
   // going to len - 1 (exclusive) to ignore closing bracket ]
   for (size_t i = 1; i < len - 1; ++i)
   {
     bool contains_decimal = false;
-    char* item_string = _json_fetch_array_item_string(array_string, i, &contains_decimal);
+    item_string = _json_fetch_array_item_string(array_string, i, &contains_decimal);
 
     if (!item_string)
       goto cleanup;
+
+    enum json_type_e type = _get_item_type(item_string);
 
     i += strlen(item_string);
     switch (type)
@@ -328,18 +321,8 @@ _json_parse_array(
         if (!contains_decimal)
         {
           int32_t value = strtol(item_string, &endptr, 10);
-          if (strlen(endptr) > 0)
+          if (!json_array_append(array, type, &value, sizeof(int32_t)))
             goto cleanup;
-          data.int32[current_array_idx++] = value;
-          if (current_array_idx == capacity)
-          {
-            capacity *= 2;
-            void* alloc = realloc(data.int32, capacity * sizeof(int32_t));
-            if (!alloc)
-              goto cleanup;
-            data.int32 = alloc;
-            memset(&data.int32[current_array_idx], 0, capacity - current_array_idx);
-          }
           break;
         }
 
@@ -357,18 +340,8 @@ _json_parse_array(
       case JSON_DECIMAL:
       {
         double value = strtod(item_string, &endptr);
-        if (strlen(endptr) > 0)
+        if (!json_array_append(array, type, &value, sizeof(double)))
           goto cleanup;
-        data.decimal[current_array_idx++] = value;
-        if (current_array_idx == capacity)
-        {
-          capacity *= 2;
-          void* alloc = realloc(data.decimal, capacity * sizeof(double));
-          if (!alloc)
-            goto cleanup;
-          data.decimal = alloc;
-          memset(&data.int32[current_array_idx], 0, capacity - current_array_idx);
-        }
         break;
       }
     }
@@ -379,65 +352,12 @@ _json_parse_array(
   goto createandreturn;
 
 cleanup:
-  switch (type)
-  {
-    case JSON_INT32:
-      free(data.int32);
-      break;
-    case JSON_DECIMAL:
-      free(data.decimal);
-      break;
-    case JSON_STRING:
-    case JSON_OBJECT:
-    case JSON_ARRAY:
-    case JSON_NOTYPE:
-      // not implemented yet
-      break;
-  }
+  free(item_string);
+  json_array_free(&array);
   return NULL;
 
 createandreturn:
-  // realloc array back to smaller size (getting rid of extra-padded items)
-  // since we are downsizing, I don't think it's possible to get NULL
-  // (but...guess I could be wrong)
-  switch (type)
-  {
-    case JSON_INT32:
-      data.int32 = realloc(data.int32, current_array_idx * sizeof(int32_t));
-      break;
-    case JSON_DECIMAL:
-      data.decimal = realloc(data.decimal, current_array_idx * sizeof(double));
-      break;
-    case JSON_STRING:
-    case JSON_OBJECT:
-    case JSON_ARRAY:
-    case JSON_NOTYPE:
-      // not implemented yet
-      break;
-  }
-
-  struct json_array_t* json_array = calloc(1, sizeof(*json_array));
-  if (!json_array)
-    return NULL;
-  json_array->type = type;
-  json_array->length = current_array_idx;
-  switch (type)
-  {
-    case JSON_INT32:
-      json_array->contents.int32 = data.int32;
-      break;
-    case JSON_DECIMAL:
-      json_array->contents.decimal = data.decimal;
-      break;
-    case JSON_STRING:
-    case JSON_OBJECT:
-    case JSON_ARRAY:
-    case JSON_NOTYPE:
-      // not implemented yet
-      break;
-  }
-
-  return json_array;
+  return array;
 }
 
 // an internal version of add_item to perform type casting
@@ -514,8 +434,6 @@ _json_add_item(
     {
       char* endptr = NULL;
       double cast_value = strtod(parse_info->parsed_value, &endptr);
-      if (strlen(endptr) > 0)
-        return false;
       success = json_add_item(json, JSON_DECIMAL, parse_info->parsed_key, &cast_value);
       break;
     }
@@ -524,8 +442,6 @@ _json_add_item(
     {
       char* endptr = NULL;
       int32_t cast_value = strtol(parse_info->parsed_value, &endptr, 10);
-      if (strlen(endptr) > 0)
-        return false;
       success = json_add_item(json, JSON_INT32, parse_info->parsed_key, &cast_value);
       break;
     }

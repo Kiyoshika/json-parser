@@ -1,4 +1,5 @@
 #include "json.h"
+#include "json_array.h"
 #include "json_internal.c"
 #include <stdio.h>
 
@@ -55,17 +56,8 @@ json_free(
       case JSON_ARRAY:
       {
         struct json_array_t* item = (*json)->items[i].value.array;
-        switch (item->type)
-        {
-          case JSON_INT32:
-            free(item->contents.int32);
-            break;
-          case JSON_DECIMAL:
-            free(item->contents.decimal);
-            break;
-          // OTHERS NOT IMPLEMENTED YET
-        }
-        free(item);
+        json_array_free(&item);
+        break;
       }
 
       case JSON_INT32:
@@ -230,9 +222,7 @@ json_parse_from_string(
   {
     char current_char = json_string[parse_info.json_string_idx];
 
-    // skip whitespace (not inside quotes)
-    if ((current_char == ' ' || current_char == '\n' || current_char == '\t')
-        && !parse_info.inside_quotes)
+    if (isspace(current_char) && !parse_info.inside_quotes)
     {
       parse_info.json_string_idx++;
       continue;
@@ -277,4 +267,25 @@ error:
   json_free(&json);
   free(parse_info.parsed_value);
   return NULL;
+}
+
+size_t
+json_type_to_size(
+  const enum json_type_e type)
+{
+  switch (type)
+  {
+    case JSON_INT32:
+      return sizeof(int32_t);
+    case JSON_DECIMAL:
+      return sizeof(double);
+    case JSON_OBJECT:
+    case JSON_STRING:
+    case JSON_ARRAY:
+      return sizeof(void*);
+    case JSON_NOTYPE:
+      return 0;
+  }
+
+  return 0;
 }
