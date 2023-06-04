@@ -18,6 +18,21 @@ target_include_directories(json_parse_string_2 PUBLIC ${json_SOURCE_DIR}/include
 target_link_libraries(json_parse_string_2 json)
 add_test(NAME json_parse_string_2 COMMAND json_parse_string_2)
 
+add_executable(json_parse_array_primitives json_parse_array_primitives.c)
+target_include_directories(json_parse_array_primitives PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_parse_array_primitives json)
+add_test(NAME json_parse_array_primitives COMMAND json_parse_array_primitives)
+
+add_executable(json_parse_array_objects json_parse_array_objects.c)
+target_include_directories(json_parse_array_objects PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_parse_array_objects json)
+add_test(NAME json_parse_array_objects COMMAND json_parse_array_objects)
+
+add_executable(json_parse_array_arrays json_parse_array_arrays.c)
+target_include_directories(json_parse_array_arrays PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_parse_array_arrays json)
+add_test(NAME json_parse_array_arrays COMMAND json_parse_array_arrays)
+
 add_executable(json_parse_string_nested json_parse_string_nested.c)
 target_include_directories(json_parse_string_nested PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_parse_string_nested json)

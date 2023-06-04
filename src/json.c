@@ -1,4 +1,5 @@
 #include "json.h"
+#include "json_array.h"
 #include "json_internal.c"
 #include <stdio.h>
 
@@ -38,23 +39,30 @@ json_free(
   {
     switch ((*json)->items[i].type)
     {
-      case STRING:
+      case JSON_STRING:
       {
         char* item = (*json)->items[i].value.str;
         free(item);
         break;
       }
 
-      case OBJECT:
+      case JSON_OBJECT:
       {
         struct json_t* item = (*json)->items[i].value.object;
         json_free(&item);
         break;
       }
 
-      case INT32:
-      case DECIMAL:
-      case NOTYPE:
+      case JSON_ARRAY:
+      {
+        struct json_array_t* item = (*json)->items[i].value.array;
+        json_array_free(&item);
+        break;
+      }
+
+      case JSON_INT32:
+      case JSON_DECIMAL:
+      case JSON_NOTYPE:
         break;
     }
   }
@@ -79,9 +87,6 @@ json_add_item(
   if (strlen(key) == 0)
     return false;
 
-  // TODO: check duplicate keys
-  // (create this in util.h)
-
   struct json_item_t new_item = {
     .type = type,
     .key = {0},
@@ -90,19 +95,22 @@ json_add_item(
 
   switch (type)
   {
-    case INT32:
+    case JSON_INT32:
       new_item.value.int32 = *(int32_t*)value;
       break;
-    case DECIMAL:
+    case JSON_DECIMAL:
       new_item.value.decimal = *(double*)value;
       break;
-    case STRING:
+    case JSON_STRING:
       new_item.value.str = value; // this is a heap copy
       break;
-    case OBJECT:
+    case JSON_OBJECT:
       new_item.value.object = value; // this is a heap copy
       break;
-    case NOTYPE:
+    case JSON_ARRAY:
+     new_item.value.array = value; // this is a heap copy
+     break;
+    case JSON_NOTYPE:
       break;
   }
 
@@ -156,16 +164,18 @@ json_get(
     {
       switch (current_item->type)
       {
-        case INT32:
+        case JSON_INT32:
           return &current_item->value.int32;
-        case DECIMAL:
+        case JSON_DECIMAL:
           return &current_item->value.decimal;
           break;
-        case STRING:
+        case JSON_STRING:
           return current_item->value.str;
-        case OBJECT:
+        case JSON_OBJECT:
           return current_item->value.object;
-        case NOTYPE:
+        case JSON_ARRAY:
+          return current_item->value.array;
+        case JSON_NOTYPE:
           return NULL;
       }
     }
@@ -187,8 +197,8 @@ json_parse_from_string(
   size_t string_len = strlen(json_string);
 
   // take values from enum _token_e in json_internal.c
-  uint8_t expected_token = OPEN_BODY;
-  uint8_t current_token = NONE;
+  uint16_t expected_token = OPEN_BODY;
+  uint16_t current_token = NONE;
 
   // an object containing all the information we need while parsing
   struct _json_parse_info_t parse_info = {
@@ -198,7 +208,7 @@ json_parse_from_string(
     .parsed_value = calloc(100, sizeof(char)),
     .parsed_value_len = 0,
     .parsed_value_capacity = 100,
-    .parsed_value_type = NOTYPE,
+    .parsed_value_type = JSON_NOTYPE,
     .parsing_key = false,
     .parsing_value = false,
     .inside_quotes = false,
@@ -212,9 +222,7 @@ json_parse_from_string(
   {
     char current_char = json_string[parse_info.json_string_idx];
 
-    // skip whitespace (not inside quotes)
-    if ((current_char == ' ' || current_char == '\n' || current_char == '\t')
-        && !parse_info.inside_quotes)
+    if (isspace(current_char) && !parse_info.inside_quotes)
     {
       parse_info.json_string_idx++;
       continue;
@@ -259,4 +267,27 @@ error:
   json_free(&json);
   free(parse_info.parsed_value);
   return NULL;
+}
+
+size_t
+json_type_to_size(
+  const enum json_type_e type)
+{
+  switch (type)
+  {
+    case JSON_INT32:
+      return sizeof(int32_t);
+    case JSON_DECIMAL:
+      return sizeof(double);
+    case JSON_OBJECT:
+      return sizeof(struct json_t);
+    case JSON_STRING:
+      return sizeof(char*);
+    case JSON_ARRAY:
+      return sizeof(struct json_array_t);
+    case JSON_NOTYPE:
+      return 0;
+  }
+
+  return 0;
 }

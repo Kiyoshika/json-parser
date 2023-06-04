@@ -14,13 +14,14 @@
 // if we ever get larger than 8-byte addresses...
 #define JSON_ADDRESS_SIZE sizeof(void*)
 
-enum json_type_e
+enum json_type_e 
 {
-  NOTYPE,
-  INT32,
-  DECIMAL,
-	STRING,
-  OBJECT
+  JSON_NOTYPE,
+  JSON_INT32,
+  JSON_DECIMAL,
+	JSON_STRING,
+  JSON_OBJECT,
+  JSON_ARRAY
 };
 
 struct json_item_t
@@ -32,6 +33,7 @@ struct json_item_t
     double decimal;
     char* str;
     struct json_t* object;
+    struct json_array_t* array;
   } value;
 	char key[JSON_MAX_KEY_LEN];
   size_t key_len;
@@ -66,5 +68,9 @@ json_get(
 struct json_t*
 json_parse_from_string(
   const char* const json_string);
+
+size_t
+json_type_to_size(
+  const enum json_type_e type);
 
 #endif

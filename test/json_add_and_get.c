@@ -20,8 +20,8 @@ int main()
   int32_t value1 = -525;
   char* value2 = strdup("string literal");
 
-  json_add_item(json, INT32, "key1", &value1);
-  json_add_item(json, STRING, "key2", value2);
+  json_add_item(json, JSON_INT32, "key1", &value1);
+  json_add_item(json, JSON_STRING, "key2", value2);
 
   // fetch items back
   int32_t key1_get = *(int32_t*)json_get(json, "key1");
