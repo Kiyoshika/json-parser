@@ -308,7 +308,7 @@ _json_parse_array(
   }
 
   size_t current_array_idx = 0;
-  char* endptr; // used for string to numeric conversions (can't declare inside switch)
+  char* endptr = NULL; // used for string to numeric conversions (can't declare inside switch)
 
   // starting at 1 to skip open bracket [
   // going to len - 1 (exclusive) to ignore closing bracket ]
@@ -328,6 +328,8 @@ _json_parse_array(
         if (!contains_decimal)
         {
           int32_t value = strtol(item_string, &endptr, 10);
+          if (strlen(endptr) > 0)
+            goto cleanup;
           data.int32[current_array_idx++] = value;
           if (current_array_idx == capacity)
           {
@@ -355,6 +357,8 @@ _json_parse_array(
       case JSON_DECIMAL:
       {
         double value = strtod(item_string, &endptr);
+        if (strlen(endptr) > 0)
+          goto cleanup;
         data.decimal[current_array_idx++] = value;
         if (current_array_idx == capacity)
         {
@@ -508,16 +512,20 @@ _json_add_item(
 
     case JSON_DECIMAL:
     {
-      char* endptr;
+      char* endptr = NULL;
       double cast_value = strtod(parse_info->parsed_value, &endptr);
+      if (strlen(endptr) > 0)
+        return false;
       success = json_add_item(json, JSON_DECIMAL, parse_info->parsed_key, &cast_value);
       break;
     }
 
     case JSON_INT32:
     {
-      char* endptr;
+      char* endptr = NULL;
       int32_t cast_value = strtol(parse_info->parsed_value, &endptr, 10);
+      if (strlen(endptr) > 0)
+        return false;
       success = json_add_item(json, JSON_INT32, parse_info->parsed_key, &cast_value);
       break;
     }
