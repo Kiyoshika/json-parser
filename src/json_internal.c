@@ -120,7 +120,7 @@ _get_next_expected_token(
       return QUOTE | TEXT | NUMERIC | OPEN_BODY | OPEN_ARRAY;
 
     case COMMA:
-      return QUOTE;
+      return QUOTE | OPEN_BODY | OPEN_ARRAY;
 
     case TEXT:
       return NONE; // if text is found outside of quotes, this is an error
@@ -142,13 +142,13 @@ _get_next_expected_token(
 static char*
 _json_fetch_body_string(
   const char* const json_string,
-  size_t idx)
+  size_t* idx)
 {
   int32_t body_count = 0;
-  size_t start_idx = idx;
-  for (; idx < strlen(json_string); ++idx)
+  size_t start_idx = *idx;
+  for (; *idx < strlen(json_string); ++(*idx))
   {
-    switch (json_string[idx])
+    switch (json_string[*idx])
     {
       case '{':
         body_count++;
@@ -164,11 +164,12 @@ _json_fetch_body_string(
 
     if (body_count == 0)
     {
-      size_t substr_len = idx - start_idx + 2;
+      size_t substr_len = *idx - start_idx + 2;
       char* body_string = calloc(substr_len, sizeof(char));
       if (!body_string)
         return NULL;
       strncat(body_string, &json_string[start_idx], substr_len - 1);
+      (*idx)++; // move past close brace }
       return body_string;
     }
   }
@@ -179,13 +180,13 @@ _json_fetch_body_string(
 static char*
 _json_fetch_array_string(
   const char* const json_string,
-  size_t idx)
+  size_t* idx)
 {
   int32_t body_count = 0;
-  size_t start_idx = idx;
-  for (; idx < strlen(json_string); ++idx)
+  size_t start_idx = *idx;
+  for (; *idx < strlen(json_string); ++(*idx))
   {
-    switch (json_string[idx])
+    switch (json_string[*idx])
     {
       case '[':
         body_count++;
@@ -201,11 +202,12 @@ _json_fetch_array_string(
 
     if (body_count == 0)
     {
-      size_t substr_len = idx - start_idx + 2;
+      size_t substr_len = *idx - start_idx + 2;
       char* body_string = calloc(substr_len, sizeof(char));
       if (!body_string)
         return NULL;
       strncat(body_string, &json_string[start_idx], substr_len - 1);
+      (*idx)++; // move past close bracket ]
       return body_string;
     }
   }
@@ -230,25 +232,41 @@ _json_reset_parse_info(
 static char*
 _json_fetch_array_item_string(
   const char* const array_string,
-  size_t idx,
+  size_t* idx,
   bool* contains_decimal)
 {
-  size_t start_idx = idx;
+  size_t start_idx = *idx;
   size_t len = strlen(array_string);
 
-  for (; idx < len; ++idx)
+  // ignore any initial whitespace
+  for (size_t i = start_idx; i < len; ++i)
   {
-    if (array_string[idx] == '.')
+    if (isspace(array_string[i]))
+      start_idx++;
+    else
+      break;
+  }
+  *idx = start_idx;
+
+  if (array_string[start_idx] == '{')
+    return _json_fetch_body_string(array_string, idx);
+  
+  if (array_string[start_idx] == '[')
+    return _json_fetch_array_string(array_string, idx);
+
+  for (; *idx < len; ++(*idx))
+  {
+    if (array_string[*idx] == '.')
     {
       *contains_decimal = true;
       continue;
     }
 
-    if (array_string[idx] == ',' || array_string[idx] == ']')
+    if (array_string[*idx] == ',' || array_string[*idx] == ']')
       break;
   }
 
-  size_t size = idx - start_idx;
+  size_t size = *idx - start_idx;
   char* item_string = calloc(size + 1, sizeof(char));
   if (!item_string)
     return NULL;
@@ -306,14 +324,13 @@ _json_parse_array(
   for (size_t i = 1; i < len - 1; ++i)
   {
     bool contains_decimal = false;
-    item_string = _json_fetch_array_item_string(array_string, i, &contains_decimal);
+    item_string = _json_fetch_array_item_string(array_string, &i, &contains_decimal);
 
     if (!item_string)
       goto cleanup;
 
     enum json_type_e type = _get_item_type(item_string);
 
-    i += strlen(item_string);
     switch (type)
     {
       case JSON_INT32:
@@ -344,6 +361,37 @@ _json_parse_array(
           goto cleanup;
         break;
       }
+
+      case JSON_STRING:
+      {
+        char* value = strdup(item_string);
+        if (!json_array_append(array, type, &value, sizeof(char*)))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_OBJECT:
+      {
+        struct json_t* object = json_parse_from_string(item_string);
+        if (!object)
+          goto cleanup;
+        if (!json_array_append(array, type, object, sizeof(*object)))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_ARRAY:
+      {
+        struct json_array_t* new_array = _json_parse_array(item_string);
+        if (!new_array)
+          goto cleanup;
+        if (!json_array_append(array, type, new_array, sizeof(*new_array)))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_NOTYPE:
+        goto cleanup;
     }
 
     free(item_string);
@@ -378,7 +426,7 @@ _json_add_item(
       char* nested_json_string 
         = _json_fetch_body_string(
             parse_info->json_string, 
-            parse_info->json_string_idx);
+            &parse_info->json_string_idx);
 
       if (!nested_json_string)
         return false;
@@ -389,9 +437,6 @@ _json_add_item(
 
       success = json_add_item(json, JSON_OBJECT, parse_info->parsed_key, nested_json);
 
-      // after parsing, we need to move the index pointer to after the body
-      parse_info->json_string_idx += strlen(nested_json_string);
-
       free(nested_json_string);
       break;
     }
@@ -401,7 +446,7 @@ _json_add_item(
       char* array_string
         = _json_fetch_array_string(
             parse_info->json_string,
-            parse_info->json_string_idx);
+            &parse_info->json_string_idx);
 
       if (!array_string)
         return false;
@@ -411,9 +456,6 @@ _json_add_item(
         return false;
 
       success = json_add_item(json, JSON_ARRAY, parse_info->parsed_key, json_array);
-
-      // after parsing, we need to move the index pointer to after the array
-      parse_info->json_string_idx += strlen(array_string);
 
       free(array_string);
       break;

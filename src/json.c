@@ -280,9 +280,11 @@ json_type_to_size(
     case JSON_DECIMAL:
       return sizeof(double);
     case JSON_OBJECT:
+      return sizeof(struct json_t);
     case JSON_STRING:
+      return sizeof(char*);
     case JSON_ARRAY:
-      return sizeof(void*);
+      return sizeof(struct json_array_t);
     case JSON_NOTYPE:
       return 0;
   }

@@ -13,6 +13,11 @@ struct json_array_t
   void* items;
   size_t current_bytes;
   size_t byte_capacity;
+
+  // keep the original heap-allocated pointers to anything
+  // so we can call free() properly.
+  // this will mimic the items array
+  void** item_pointers;
 };
 
 struct json_array_t*

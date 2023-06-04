@@ -28,6 +28,16 @@ json_array_create()
     return NULL;
   }
 
+
+  array->item_pointers = calloc(array->item_capacity, sizeof(void*));
+  if (!array->item_pointers)
+  {
+    free(array->item_types);
+    free(array->items);
+    free(array);
+    return NULL;
+  }
+
   return array;
 }
 
@@ -39,7 +49,7 @@ json_array_append(
   size_t sizeof_item)
 {
   /* APPEND ITEM TYPE */
-  array->item_types[array->n_items++] = item_type;
+  array->item_types[array->n_items] = item_type;
   if (array->n_items == array->item_capacity)
   {
     size_t new_item_capacity = array->item_capacity * 2;
@@ -48,9 +58,14 @@ json_array_append(
       return false;
     array->item_capacity = new_item_capacity;
     array->item_types = alloc;
+
+    void* alloc2 = realloc(array->item_pointers, new_item_capacity * sizeof(void*));
+    if (!alloc2)
+      return false;
+    array->item_pointers = alloc2;
   }
 
-  /* APPEND ITEM */
+  /* COPY ITEM CONTENTS */
   if (sizeof_item + array->current_bytes >= array->byte_capacity)
   {
     size_t new_byte_capacity = array->byte_capacity *= 2;
@@ -64,6 +79,28 @@ json_array_append(
   void* write_to = (char*)array->items + array->current_bytes;
   memcpy(write_to, item, sizeof_item);
   array->current_bytes += sizeof_item;
+
+  /* STORE ORIGINAL POINTER TO free() */
+  switch (item_type)
+  {
+    case JSON_OBJECT:
+    case JSON_ARRAY:
+      array->item_pointers[array->n_items] = item;
+      break;
+    // since string is passed by address, we have to dereference
+    // to get the original pointer to pass to free()
+    case JSON_STRING:
+      array->item_pointers[array->n_items] = *(char**)item;
+      break;
+
+    case JSON_INT32:
+    case JSON_DECIMAL:
+    case JSON_NOTYPE:
+      array->item_pointers[array->n_items] = NULL;
+      break;
+  }
+
+  array->n_items++;
 
   return true;
 }
@@ -94,37 +131,28 @@ void
 json_array_free(
   struct json_array_t** array)
 {
-
-  size_t current_offset = 0;
   for (size_t i = 0; i < (*array)->n_items; ++i)
   {
-    current_offset += i * json_type_to_size((*array)->item_types[i]);
-
     switch ((*array)->item_types[i])
     {
       case JSON_OBJECT:
       {
-        struct json_t* json = (char*)((*array)->items) + current_offset;
+        struct json_t* json = (*array)->item_pointers[i];
         json_free(&json);
         break;
       }
-
       case JSON_ARRAY:
       {
-        struct json_array_t* json_array = (char*)((*array)->items) + current_offset;
+        struct json_array_t* json_array = (*array)->item_pointers[i];
         json_array_free(&json_array);
         break;
       }
-
       case JSON_STRING:
       {
-        char** string = (char*)((*array)->items) + current_offset;
-        free(*string);
-        *string = NULL;
+        char* string = (*array)->item_pointers[i];
+        free(string);
         break;
       }
-
-      // no action
       case JSON_INT32:
       case JSON_DECIMAL:
       case JSON_NOTYPE:
@@ -137,6 +165,9 @@ json_array_free(
 
   free((*array)->item_types);
   (*array)->item_types = NULL;
+
+  free((*array)->item_pointers);
+  (*array)->item_pointers = NULL;
 
   free(*array);
   *array = NULL;
