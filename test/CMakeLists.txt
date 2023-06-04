@@ -18,6 +18,11 @@ target_include_directories(json_parse_string_2 PUBLIC ${json_SOURCE_DIR}/include
 target_link_libraries(json_parse_string_2 json)
 add_test(NAME json_parse_string_2 COMMAND json_parse_string_2)
 
+add_executable(json_parse_array json_parse_array.c)
+target_include_directories(json_parse_array PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_parse_array json)
+add_test(NAME json_parse_array COMMAND json_parse_array)
+
 add_executable(json_parse_string_nested json_parse_string_nested.c)
 target_include_directories(json_parse_string_nested PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_parse_string_nested json)
