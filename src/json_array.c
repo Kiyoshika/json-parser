@@ -84,9 +84,9 @@ void*
 json_array_get_fixed(
   const struct json_array_t* const array,
   const size_t idx,
-  const size_t sizeof_item)
+  const enum json_type_e type)
 {
-  size_t offset = idx * sizeof_item;
+  size_t offset = idx * json_type_to_size(type);
   return (char*)array->items + offset;
 }
 
@@ -94,5 +94,51 @@ void
 json_array_free(
   struct json_array_t** array)
 {
+
+  size_t current_offset = 0;
+  for (size_t i = 0; i < (*array)->n_items; ++i)
+  {
+    current_offset += i * json_type_to_size((*array)->item_types[i]);
+
+    switch ((*array)->item_types[i])
+    {
+      case JSON_OBJECT:
+      {
+        struct json_t* json = (char*)((*array)->items) + current_offset;
+        json_free(&json);
+        break;
+      }
+
+      case JSON_ARRAY:
+      {
+        struct json_array_t* json_array = (char*)((*array)->items) + current_offset;
+        json_array_free(&json_array);
+        break;
+      }
+
+      case JSON_STRING:
+      {
+        char** string = (char*)((*array)->items) + current_offset;
+        free(*string);
+        *string = NULL;
+        break;
+      }
+
+      // no action
+      case JSON_INT32:
+      case JSON_DECIMAL:
+      case JSON_NOTYPE:
+        break;
+    }
+  }
+
+  free((*array)->items);
+  (*array)->items = NULL;
+
+  free((*array)->item_types);
+  (*array)->item_types = NULL;
+
+  free(*array);
+  *array = NULL;
 
 }

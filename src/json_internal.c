@@ -276,7 +276,7 @@ _get_item_type(
     return JSON_STRING;
 
   // type will be updated to DECIMAL later if one is found while parsing
-  if (item_string[idx] >= '0' && item_string[idx] <= '9')
+  if (item_string[idx] == '-' || (item_string[idx] >= '0' && item_string[idx] <= '9'))
     return JSON_INT32;
 
   if (item_string[idx] == '[')

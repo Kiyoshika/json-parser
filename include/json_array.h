@@ -39,7 +39,7 @@ void*
 json_array_get_fixed(
   const struct json_array_t* const array,
   const size_t idx,
-  const size_t sizeof_item);
+  const enum json_type_e type);
 
 void
 json_array_free(
