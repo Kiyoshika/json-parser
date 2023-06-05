@@ -146,7 +146,8 @@ _json_fetch_body_string(
 {
   int32_t body_count = 0;
   size_t start_idx = *idx;
-  for (; *idx < strlen(json_string); ++(*idx))
+  size_t len = strlen(json_string);
+  for (; *idx < len; ++(*idx))
   {
     switch (json_string[*idx])
     {
@@ -184,7 +185,8 @@ _json_fetch_array_string(
 {
   int32_t body_count = 0;
   size_t start_idx = *idx;
-  for (; *idx < strlen(json_string); ++(*idx))
+  size_t len = strlen(json_string);
+  for (; *idx < len; ++(*idx))
   {
     switch (json_string[*idx])
     {
@@ -229,6 +231,80 @@ _json_reset_parse_info(
   parse_info->parsed_value_type = JSON_NOTYPE;
 }
 
+static char* 
+_json_fetch_quote_string(
+  const char* const array_string,
+  size_t* idx)
+{
+  *idx += 1; // move index past initial open quote
+  size_t start_idx = *idx;
+  size_t len = strlen(array_string);
+  for (; *idx < len; ++(*idx))
+  {
+    if (array_string[*idx] == '\"')
+    {
+      size_t substr_len = *idx - start_idx;
+      char* substr = calloc(substr_len + 1, sizeof(char));
+      if (!substr)
+        return NULL;
+      strncat(substr, &array_string[start_idx], substr_len);
+      (*idx)++; // move past closing quote
+      // consume any trailing whitespace
+      while (*idx < len && isspace(array_string[*idx]))
+        (*idx)++;
+
+      return substr;
+    }
+  }
+
+  return NULL;
+}
+
+static char* 
+_json_fetch_numeric_string(
+  const char* const array_string,
+  size_t* idx,
+  bool* contains_decimal)
+{
+  size_t start_idx = *idx;
+  size_t len = strlen(array_string);
+  for (; *idx < len; ++(*idx))
+  {
+    // whitespace prohibited in numerics
+    if (isspace(array_string[*idx]))
+      return NULL;
+
+    if (!isdigit(array_string[*idx])
+        && array_string[*idx] != '-'
+        && array_string[*idx] != '.'
+        && array_string[*idx] != ','
+        && array_string[*idx] != ']'
+        && array_string[*idx] != '}')
+      return NULL;
+
+    if (array_string[*idx] == '.')
+      *contains_decimal = true;
+
+    if (array_string[*idx] == ',' 
+        || array_string[*idx] == ']'
+        || array_string[*idx] == '}')
+    {
+      size_t substr_len = *idx - start_idx;
+      char* substr = calloc(substr_len + 1, sizeof(char));
+      if (!substr)
+        return NULL;
+      strncat(substr, &array_string[start_idx], substr_len);
+      // consume any trailing whitespace
+      while (*idx < len && isspace(array_string[*idx]))
+        (*idx)++;
+
+      return substr;
+    }
+  }
+
+  return NULL;
+}
+
 static char*
 _json_fetch_array_item_string(
   const char* const array_string,
@@ -254,17 +330,17 @@ _json_fetch_array_item_string(
   if (array_string[start_idx] == '[')
     return _json_fetch_array_string(array_string, idx);
 
-  for (; *idx < len; ++(*idx))
-  {
-    if (array_string[*idx] == '.')
-    {
-      *contains_decimal = true;
-      continue;
-    }
+  if (array_string[start_idx] == '\"')
+    return _json_fetch_quote_string(array_string, idx);
 
+  if (array_string[start_idx] == '.' 
+      || array_string[start_idx] == '-'
+      || (array_string[start_idx] >= '0' && array_string[start_idx] <= '9'))
+      return _json_fetch_numeric_string(array_string, idx, contains_decimal);
+
+  for (; *idx < len; ++(*idx))
     if (array_string[*idx] == ',' || array_string[*idx] == ']')
       break;
-  }
 
   size_t size = *idx - start_idx;
   char* item_string = calloc(size + 1, sizeof(char));
@@ -290,9 +366,6 @@ _get_item_type(
       break;
   }
 
-  if (item_string[idx] == '"')
-    return JSON_STRING;
-
   // type will be updated to DECIMAL later if one is found while parsing
   if (item_string[idx] == '-' || (item_string[idx] >= '0' && item_string[idx] <= '9'))
     return JSON_INT32;
@@ -303,7 +376,7 @@ _get_item_type(
   if (item_string[idx] == '{')
     return JSON_OBJECT;
 
-  return JSON_NOTYPE;
+  return JSON_STRING;
 }
 
 static struct json_array_t*
@@ -613,37 +686,30 @@ _perform_token_action(
 
     case NUMERIC:
     {
-      size_t value_len = strlen(parse_info->parsed_value);
-
-      // if value starts with numeric, it's a numeric type
-      // (I'm using INT32 as a placeholder for numeric but it works
-      // with doubles/floats as well)
-      if (parse_info->parsing_value
-          && parse_info->parsed_value_type == JSON_NOTYPE 
-          && value_len == 0)
-      {
-        if (current_char == '.')
-          parse_info->parsed_value_type = JSON_DECIMAL;
-        else
-          parse_info->parsed_value_type = JSON_INT32;
-
-        if (!_json_append_char_to_value(parse_info, current_char))
-          return false;
-      }
-
-      else if (parse_info->parsing_value
-               && (parse_info->parsed_value_type == JSON_DECIMAL || parse_info->parsed_value_type == JSON_INT32))
-      {
-        if (current_char == '.' && parse_info->parsed_value_type == JSON_INT32)
-          parse_info->parsed_value_type = JSON_DECIMAL;
-
-        if (!_json_append_char_to_value(parse_info, current_char))
-          return false;
-      }
-
-      else
+      bool contains_decimal = false;
+      char* numeric_string 
+        = _json_fetch_numeric_string(
+            parse_info->json_string, 
+            &parse_info->json_string_idx,
+            &contains_decimal);
+      if (!numeric_string)
         return false;
 
+      if (contains_decimal)
+        parse_info->parsed_value_type = JSON_DECIMAL;
+      else
+        parse_info->parsed_value_type = JSON_INT32;
+
+      size_t len = strlen(numeric_string);
+      strncat(parse_info->parsed_value, numeric_string, len);
+      parse_info->parsed_value_len = len;
+
+      if (!_json_add_item(json, parse_info))
+        return false;
+      
+      free(numeric_string);
+      _json_reset_parse_info(parse_info);
+      
       break;
     }
 
