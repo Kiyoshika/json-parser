@@ -30,7 +30,7 @@ int main()
   }
 
   struct json_array_t* string_array = json_array_get_fixed(nested_arrays, 1, JSON_ARRAY);
-  char* expected2[3] = { "\"a\"", "\"b\"", "\"c\"" };
+  char* expected2[3] = { "a", "b", "c" };
   for (size_t i = 0; i < string_array->n_items; ++i)
   {
     char* value = *(char**)json_array_get_fixed(string_array, i, JSON_STRING);

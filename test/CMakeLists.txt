@@ -37,3 +37,13 @@ add_executable(json_parse_string_nested json_parse_string_nested.c)
 target_include_directories(json_parse_string_nested PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_parse_string_nested json)
 add_test(NAME json_parse_string_nested COMMAND json_parse_string_nested)
+
+add_executable(json_numeric_whitespace json_numeric_whitespace.c)
+target_include_directories(json_numeric_whitespace PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_numeric_whitespace json)
+add_test(NAME json_numeric_whitespace COMMAND json_numeric_whitespace)
+
+add_executable(json_string_whitespace json_string_whitespace.c)
+target_include_directories(json_string_whitespace PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_string_whitespace json)
+add_test(NAME json_string_whitespace COMMAND json_string_whitespace)
