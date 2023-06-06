@@ -139,6 +139,29 @@ _get_next_expected_token(
   return NONE;
 }
 
+// general cleanup to do when parsing an array item.
+// consumes any trailing whitespace and ensures no missing
+// delimiters/closure
+// e.g., to prevent things like [a b c] instead of [a, b, c]
+static bool
+_json_array_item_cleanup(
+  const char* const array_string,
+  size_t* idx,
+  const size_t len)
+{
+  // consume any trailing whitespace
+  while (*idx < len && isspace(array_string[*idx]))
+    (*idx)++;
+  // double check we don't have a missing delimiter
+  // e.g., to prevent things like [a b c] instead of [a, b, c]
+  if (*idx < len - 1 
+      && array_string[*idx] != ','
+      && array_string[*idx] != ']')
+    return false;
+
+  return true;
+}
+
 static char*
 _json_fetch_body_string(
   const char* const json_string,
@@ -171,6 +194,13 @@ _json_fetch_body_string(
         return NULL;
       strncat(body_string, &json_string[start_idx], substr_len - 1);
       (*idx)++; // move past close brace }
+
+      if (!_json_array_item_cleanup(json_string, idx, len))
+      {
+        free(body_string);
+        return NULL;
+      }
+
       return body_string;
     }
   }
@@ -210,6 +240,13 @@ _json_fetch_array_string(
         return NULL;
       strncat(body_string, &json_string[start_idx], substr_len - 1);
       (*idx)++; // move past close bracket ]
+
+      if (!_json_array_item_cleanup(json_string, idx, len))
+      {
+        free(body_string);
+        return NULL;
+      }
+    
       return body_string;
     }
   }
@@ -249,10 +286,13 @@ _json_fetch_quote_string(
         return NULL;
       strncat(substr, &array_string[start_idx], substr_len);
       (*idx)++; // move past closing quote
-      // consume any trailing whitespace
-      while (*idx < len && isspace(array_string[*idx]))
-        (*idx)++;
 
+      if (!_json_array_item_cleanup(array_string, idx, len))
+      {
+        free(substr);
+        return NULL;
+      }
+      
       return substr;
     }
   }
@@ -291,12 +331,16 @@ _json_fetch_numeric_string(
     {
       size_t substr_len = *idx - start_idx;
       char* substr = calloc(substr_len + 1, sizeof(char));
+
       if (!substr)
         return NULL;
       strncat(substr, &array_string[start_idx], substr_len);
-      // consume any trailing whitespace
-      while (*idx < len && isspace(array_string[*idx]))
-        (*idx)++;
+      
+      if (!_json_array_item_cleanup(array_string, idx, len))
+      {
+        free(substr);
+        return NULL;
+      }
 
       return substr;
     }
@@ -506,7 +550,10 @@ _json_add_item(
 
       struct json_t* nested_json = json_parse_from_string(nested_json_string);
       if (!nested_json)
+      {
+        free(nested_json_string);
         return false;
+      }
 
       success = json_add_item(json, JSON_OBJECT, parse_info->parsed_key, nested_json);
 
@@ -526,7 +573,10 @@ _json_add_item(
 
       struct json_array_t* json_array = _json_parse_array(array_string);
       if (!json_array)
+      {
+        free(array_string);
         return false;
+      }
 
       success = json_add_item(json, JSON_ARRAY, parse_info->parsed_key, json_array);
 

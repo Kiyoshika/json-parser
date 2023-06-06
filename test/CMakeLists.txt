@@ -47,3 +47,8 @@ add_executable(json_string_whitespace json_string_whitespace.c)
 target_include_directories(json_string_whitespace PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_string_whitespace json)
 add_test(NAME json_string_whitespace COMMAND json_string_whitespace)
+
+add_executable(json_missing_delimiter json_missing_delimiter.c)
+target_include_directories(json_missing_delimiter PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_missing_delimiter json)
+add_test(NAME json_missing_delimiter COMMAND json_missing_delimiter)
