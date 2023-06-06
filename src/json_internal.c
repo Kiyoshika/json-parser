@@ -120,11 +120,10 @@ _get_next_expected_token(
       return QUOTE | TEXT | NUMERIC | OPEN_BODY | OPEN_ARRAY;
 
     case COMMA:
-      return QUOTE | OPEN_BODY | OPEN_ARRAY;
+      return TEXT | QUOTE | OPEN_BODY | OPEN_ARRAY;
 
     case TEXT:
-      return NONE; // if text is found outside of quotes, this is an error
-                   // UNLESS it's null but that's not implemented yet
+      return TEXT | COMMA | CLOSE_BODY | CLOSE_ARRAY;
 
     case NUMERIC:
       return NUMERIC | COMMA | CLOSE_BODY;
@@ -420,6 +419,14 @@ _get_item_type(
   if (item_string[idx] == '{')
     return JSON_OBJECT;
 
+  // spcial cases not to be confused with JSON_STRING
+
+  // TODO: add null here
+
+  if (strcmp(item_string, "true") == 0
+      || strcmp(item_string, "false") == 0)
+    return JSON_BOOL;
+
   return JSON_STRING;
 }
 
@@ -487,6 +494,20 @@ _json_parse_array(
         break;
       }
 
+      case JSON_BOOL:
+      {
+        // bool must be "true" or "false" all lowercase
+        bool value = false;
+        if (strcmp(item_string, "true") == 0)
+          value = true;
+        else if (strcmp(item_string, "false") != 0)
+          goto cleanup;
+
+        if (!json_array_append(array, type, &value, sizeof(bool)))
+          goto cleanup;
+        break;
+      }
+
       case JSON_OBJECT:
       {
         struct json_t* object = json_parse_from_string(item_string);
@@ -531,6 +552,18 @@ _json_add_item(
   struct json_t* const json,
   struct _json_parse_info_t* const parse_info)
 {
+
+  // initially these special cases have JSON_NOTYPE,
+  // so we check them here after extracting their values
+  if (parse_info->parsed_value_type == JSON_NOTYPE)
+  {
+    // TODO: add null here
+    if (strcmp(parse_info->parsed_value, "true") == 0
+        || strcmp(parse_info->parsed_value, "false") == 0)
+      parse_info->parsed_value_type = JSON_BOOL;
+    else
+      return false;
+  }
 
   // TODO: check duplicate keys
 
@@ -611,6 +644,18 @@ _json_add_item(
       break;
     }
 
+    case JSON_BOOL:
+    {
+      bool value = false;
+      if (strcmp(parse_info->parsed_value, "true") == 0)
+        value = true;
+      else if (strcmp(parse_info->parsed_value, "false") != 0)
+        return false;
+
+      success = json_add_item(json, JSON_BOOL, parse_info->parsed_key, &value);
+      break;
+    }
+
     case JSON_NOTYPE:
       break;
   }
@@ -688,6 +733,13 @@ _perform_token_action(
       break;
 
     case CLOSE_BODY:
+      // if we still have content in our value when closing off JSON,
+      // try to add the item
+      if (parse_info->parsing_value && strlen(parse_info->parsed_value) > 0)
+      {
+        if (!_json_add_item(json, parse_info))
+          return false;
+      }
       parse_info->parsing_key = false;
       parse_info->parsing_value = false;
       break;
@@ -720,15 +772,8 @@ _perform_token_action(
         _json_append_char_to_key(parse_info, current_char);
       }
 
-      else if (parse_info->parsing_value 
-               && parse_info->inside_quotes 
-               && parse_info->parsed_value_type == JSON_STRING)
-      {
-        if (!_json_append_char_to_value(parse_info, current_char))
-          return false;
-      }
-
-      else
+      else if (parse_info->parsing_value
+              && !_json_append_char_to_value(parse_info, current_char))
         return false;
 
       break;
@@ -781,7 +826,7 @@ _perform_token_action(
           || strlen(parse_info->parsed_value) == 0)
         return false;
 
-     else if (!_json_add_item(
+      else if (!_json_add_item(
                json,
                parse_info))
        return false;
