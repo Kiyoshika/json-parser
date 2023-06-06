@@ -96,6 +96,7 @@ json_array_append(
     case JSON_INT32:
     case JSON_DECIMAL:
     case JSON_NOTYPE:
+    case JSON_BOOL:
       array->item_pointers[array->n_items] = NULL;
       break;
   }
@@ -155,6 +156,7 @@ json_array_free(
       }
       case JSON_INT32:
       case JSON_DECIMAL:
+      case JSON_BOOL:
       case JSON_NOTYPE:
         break;
     }

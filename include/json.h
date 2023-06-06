@@ -21,7 +21,8 @@ enum json_type_e
   JSON_DECIMAL,
 	JSON_STRING,
   JSON_OBJECT,
-  JSON_ARRAY
+  JSON_ARRAY,
+  JSON_BOOL
 };
 
 struct json_item_t
@@ -34,6 +35,7 @@ struct json_item_t
     char* str;
     struct json_t* object;
     struct json_array_t* array;
+    bool boolean;
   } value;
 	char key[JSON_MAX_KEY_LEN];
   size_t key_len;

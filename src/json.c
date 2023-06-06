@@ -62,6 +62,7 @@ json_free(
 
       case JSON_INT32:
       case JSON_DECIMAL:
+      case JSON_BOOL:
       case JSON_NOTYPE:
         break;
     }
@@ -110,6 +111,8 @@ json_add_item(
     case JSON_ARRAY:
      new_item.value.array = value; // this is a heap copy
      break;
+    case JSON_BOOL:
+      new_item.value.boolean = *(bool*)value;
     case JSON_NOTYPE:
       break;
   }
@@ -175,6 +178,8 @@ json_get(
           return current_item->value.object;
         case JSON_ARRAY:
           return current_item->value.array;
+        case JSON_BOOL:
+          return &current_item->value.boolean;
         case JSON_NOTYPE:
           return NULL;
       }
@@ -285,6 +290,8 @@ json_type_to_size(
       return sizeof(char*);
     case JSON_ARRAY:
       return sizeof(struct json_array_t);
+    case JSON_BOOL:
+      return sizeof(bool);
     case JSON_NOTYPE:
       return 0;
   }
