@@ -52,3 +52,8 @@ add_executable(json_missing_delimiter json_missing_delimiter.c)
 target_include_directories(json_missing_delimiter PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_missing_delimiter json)
 add_test(NAME json_missing_delimiter COMMAND json_missing_delimiter)
+
+add_executable(json_empty_array json_empty_array.c)
+target_include_directories(json_empty_array PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_empty_array json)
+add_test(NAME json_empty_array COMMAND json_empty_array)
