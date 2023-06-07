@@ -1,14 +1,14 @@
 # JSON Parser for C
 I've been wanting to write a JSON parser for a while just for the hell of it, so here's my attempt.
 
-NOTE: this is still pretty heavy under construction, but pretty usable so far.
+NOTE: this is still under construction, but pretty usable so far.
 
-Due to being under construction, the API is incomplete and unstable (may change).
+Due to being under construction, the API is incomplete and unstable (i.e., may change).
 
 If you notice a bug (that's not alreay mentioned in the issues) please report it! (Or fix it and submit a PR)
 
 ## Overview
-Currently supported features:
+### Currently supported features:
 * Basic objects with the following datatypes:
   * int32, double, bool, string, object, array
 * Mixed-type arrays
@@ -17,7 +17,7 @@ Currently supported features:
 * Nested arrays
 * Parsing from raw string
 
-Upcoming features:
+### Upcoming features:
 * Reading/writing to file
 * Writing JSON object to string (deserialization)
 * `null` type
@@ -25,8 +25,9 @@ Upcoming features:
 * Array iterators
 * Value setters (for safer manipulation)
 * "safer" parsing from string (like `strncpy` instead of `strcpy`)
+* More convenient getters (to avoid a lot of casting)
 
-Known issues:
+### Known issues:
 * Numbers inside keys break the parser
   * e.g., `key123`
 * Escaped quotes and other special characters *may* break keys/values
