@@ -27,8 +27,7 @@ bool
 json_array_append(
   struct json_array_t* array,
   enum json_type_e item_type,
-  void* item,
-  size_t sizeof_item);
+  void* item);
 
 // get item by computing the offset
 // based off internal sizes.

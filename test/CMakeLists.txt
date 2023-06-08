@@ -62,3 +62,8 @@ add_executable(json_bool json_bool.c)
 target_include_directories(json_bool PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_bool json)
 add_test(NAME json_bool COMMAND json_bool)
+
+add_executable(json_numbers_in_key json_numbers_in_key.c)
+target_include_directories(json_numbers_in_key PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_numbers_in_key json)
+add_test(NAME json_numbers_in_key COMMAND json_numbers_in_key)

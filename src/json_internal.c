@@ -126,7 +126,7 @@ _get_next_expected_token(
       return TEXT | COMMA | CLOSE_BODY | CLOSE_ARRAY;
 
     case NUMERIC:
-      return NUMERIC | COMMA | CLOSE_BODY;
+      return NUMERIC | TEXT | COMMA | CLOSE_BODY;
     
     case NONE:
     case UNKNOWN:
@@ -307,13 +307,17 @@ _json_fetch_numeric_string(
 {
   size_t start_idx = *idx;
   size_t len = strlen(array_string);
+  size_t space_count = 0;
   for (; *idx < len; ++(*idx))
   {
     // whitespace prohibited in numerics
+    // but we have to wait until we read the entire value
+    // before determining if it's illegal or not
     if (isspace(array_string[*idx]))
-      return NULL;
+      space_count++;
 
     if (!isdigit(array_string[*idx])
+        && !isspace(array_string[*idx])
         && array_string[*idx] != '-'
         && array_string[*idx] != '.'
         && array_string[*idx] != ','
@@ -328,6 +332,20 @@ _json_fetch_numeric_string(
         || array_string[*idx] == ']'
         || array_string[*idx] == '}')
     {
+      // ignore any trailing whitespace before closing token. e.g.,
+      // { "key": 10    } <-- this whitespace is ok
+      // { "key": 1 0   } <-- this whitespace is NOT ok
+      // basically we iterate backwards again until finding a non-space token
+      size_t reverse_idx = *idx - 1;
+      while (isspace(array_string[reverse_idx]))
+      {
+        space_count--;
+        reverse_idx--;
+      }
+
+      if (space_count > 0)
+        return NULL;
+
       size_t substr_len = *idx - start_idx;
       char* substr = calloc(substr_len + 1, sizeof(char));
 
@@ -462,7 +480,7 @@ _json_parse_array(
         if (!contains_decimal)
         {
           int32_t value = strtol(item_string, &endptr, 10);
-          if (!json_array_append(array, type, &value, sizeof(int32_t)))
+          if (!json_array_append(array, type, &value))
             goto cleanup;
           break;
         }
@@ -481,7 +499,7 @@ _json_parse_array(
       case JSON_DECIMAL:
       {
         double value = strtod(item_string, &endptr);
-        if (!json_array_append(array, type, &value, sizeof(double)))
+        if (!json_array_append(array, type, &value))
           goto cleanup;
         break;
       }
@@ -489,7 +507,7 @@ _json_parse_array(
       case JSON_STRING:
       {
         char* value = strdup(item_string);
-        if (!json_array_append(array, type, &value, sizeof(char*)))
+        if (!json_array_append(array, type, &value))
           goto cleanup;
         break;
       }
@@ -503,7 +521,7 @@ _json_parse_array(
         else if (strcmp(item_string, "false") != 0)
           goto cleanup;
 
-        if (!json_array_append(array, type, &value, sizeof(bool)))
+        if (!json_array_append(array, type, &value))
           goto cleanup;
         break;
       }
@@ -513,7 +531,7 @@ _json_parse_array(
         struct json_t* object = json_parse_from_string(item_string);
         if (!object)
           goto cleanup;
-        if (!json_array_append(array, type, object, sizeof(*object)))
+        if (!json_array_append(array, type, object))
           goto cleanup;
         break;
       }
@@ -523,7 +541,7 @@ _json_parse_array(
         struct json_array_t* new_array = _json_parse_array(item_string);
         if (!new_array)
           goto cleanup;
-        if (!json_array_append(array, type, new_array, sizeof(*new_array)))
+        if (!json_array_append(array, type, new_array))
           goto cleanup;
         break;
       }
@@ -781,6 +799,12 @@ _perform_token_action(
 
     case NUMERIC:
     {
+      if (parse_info->parsing_key)
+      {
+        _json_append_char_to_key(parse_info, current_char);
+        break;
+      }
+
       bool contains_decimal = false;
       char* numeric_string 
         = _json_fetch_numeric_string(
