@@ -45,8 +45,33 @@ int main()
     goto cleanup;
   }
 
+  // I got this dummy sample from a JSON to String Online converter
+  char* json_string_2 = "{\"browsers\":{\"firefox\":{\"name\":\"Firefox\",\"pref_url\":\"about:config\",\"releases\":{\"1\":{\"release_date\":\"2004-11-09\",\"status\":\"retired\",\"engine\":\"Gecko\",\"engine_version\":\"1.7\"}}}}}";
+  struct json_t* json_2 = json_parse_from_string(json_string_2);
+  if (!json_2)
+  {
+    fprintf(stderr, "Failed to parse second JSON.\n");
+    json_free(&json);
+    return -1;
+  }
+
+  // not going to bother checking all values (even though I should)
+  // just gonna check a random deeply nested one
+  
+  char* engine =  json_get(
+                  json_get(
+                  json_get(
+                  json_get(
+                  json_get(json_2, "browsers"), "firefox"), "releases"), "1"), "engine");
+  if (strcmp(engine, "Gecko") != 0)
+  {
+    fprintf(stderr, "Expected engine to have value 'Gecko' but got '%s'.\n", engine);
+    goto cleanup;
+  }
+
   status = 0;
 cleanup:
   json_free(&json);
+  json_free(&json_2);
   return status;
 }

@@ -782,6 +782,7 @@ _perform_token_action(
 
     // spaces and commas are technically different tokens, so
     // by default they would be ignored
+    parse_string:
     case TEXT:
     {
       if (parse_info->parsing_key 
@@ -799,6 +800,10 @@ _perform_token_action(
 
     case NUMERIC:
     {
+      // a numeric value inside a string
+      if (parse_info->parsed_value_type == JSON_STRING)
+        goto parse_string;
+
       if (parse_info->parsing_key)
       {
         _json_append_char_to_key(parse_info, current_char);
