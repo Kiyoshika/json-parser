@@ -67,3 +67,8 @@ add_executable(json_numbers_in_key json_numbers_in_key.c)
 target_include_directories(json_numbers_in_key PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_numbers_in_key json)
 add_test(NAME json_numbers_in_key COMMAND json_numbers_in_key)
+
+add_executable(json_empty_objects json_empty_objects.c)
+target_include_directories(json_empty_objects PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_empty_objects json)
+add_test(NAME json_empty_objects COMMAND json_empty_objects)
