@@ -28,8 +28,6 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * More convenient getters (to avoid a lot of casting)
 
 ### Known issues:
-* Numbers inside keys break the parser
-  * e.g., `key123`
 * Escaped quotes and other special characters *may* break keys/values
 
 ## Basic Usage
