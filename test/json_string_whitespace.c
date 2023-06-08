@@ -11,6 +11,10 @@ int main()
   char* json_string = "{ \"key\": \"value\"     , \"other\":     \"otherval\",   \"arr\": [\"val1\"    ,   \"val2\"    ]}";
 
   struct json_t* json = json_parse_from_string(json_string);
+  struct json_t* json_2 = NULL;
+  struct json_t* json_3 = NULL;
+  struct json_t* json_4 = NULL;
+  struct json_t* json_5 = NULL;
   if (!json)
   {
     fprintf(stderr, "Couldn't parse JSON.");
@@ -46,8 +50,62 @@ int main()
     goto cleanup;
   }
 
+  char* json_string_2 = "{ \"key\": 10 }";
+  json_2 = json_parse_from_string(json_string_2);
+  if (!json_2)
+  {
+    fprintf(stderr, "Couldn't parse JSON.\n");
+    goto cleanup;
+  }
+  int32_t intval = *(int32_t*)json_get(json_2, "key");
+  if (intval != 10)
+  {
+    fprintf(stderr, "Expected value to be 10 but got %d.\n", intval);
+    goto cleanup;
+  }
+
+  char* json_string_3 = "{ \"key\":   11   }";
+  json_3 = json_parse_from_string(json_string_3);
+  if (!json_3)
+  {
+   fprintf(stderr, "Couldn't parse JSON.\n");
+    goto cleanup;
+  }
+  intval = *(int32_t*)json_get(json_3, "key");
+  if (intval != 11)
+  {
+    fprintf(stderr, "Expected value to be 11 but got %d.\n", intval);
+    goto cleanup;
+  }
+
+  char* json_string_4 = "{ \"key\": 1 2 }";
+  json_4 = json_parse_from_string(json_string_4);
+  if (json_4)
+  {
+    fprintf(stderr, "Expected json_4 to fail but it succeeded.\n");
+    goto cleanup;
+  }
+
+  char* json_string_5 = "{ \"key\":13}";
+  json_5 = json_parse_from_string(json_string_5);
+  if (!json_5)
+  {
+    fprintf(stderr, "Couldn't parse JSON.\n");
+    goto cleanup;
+  }
+  intval = *(int32_t*)json_get(json_5, "key");
+  if (intval != 13)
+  {
+    fprintf(stderr, "Expected value to be 13 but got %d.\n", intval);
+    goto cleanup;
+  }
+
   status = 0;
 cleanup:
   json_free(&json);
+  json_free(&json_2);
+  json_free(&json_3);
+  json_free(&json_4);
+  json_free(&json_5);
   return status;
 }

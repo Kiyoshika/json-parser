@@ -65,7 +65,8 @@ json_array_append(
   }
 
   /* COPY ITEM CONTENTS */
-  if (json_type_to_size(item_type) + array->current_bytes >= array->byte_capacity)
+  size_t sizeof_item = json_type_to_size(item_type);
+  if (sizeof_item + array->current_bytes >= array->byte_capacity)
   {
     size_t new_byte_capacity = array->byte_capacity *= 2;
     void *alloc = realloc(array->items, new_byte_capacity);
