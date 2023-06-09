@@ -63,5 +63,14 @@ int main()
     return -1;
   }
 
+  char* json_string_7 = "{ \"key\": 1 \"key2\": 2 }";
+  struct json_t* json_7 = json_parse_from_string(json_string_7);
+  if (json_7 != NULL)
+  {
+    fprintf(stderr, "JSON was expected to fail parsing but succeeded.\n");
+    json_free(&json_7);
+    return -1;
+  }
+
   return 0;
 }

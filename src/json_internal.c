@@ -46,6 +46,7 @@ struct _json_parse_info_t
   bool parsing_value;
   bool inside_quotes;
   enum _token_e previous_token;
+  bool expecting_delimiter;
 };
 
 static enum _token_e
@@ -265,6 +266,7 @@ _json_reset_parse_info(
   parse_info->parsing_value = false;
   parse_info->inside_quotes = false;
   parse_info->parsed_value_type = JSON_NOTYPE;
+  parse_info->expecting_delimiter = false;
 }
 
 static char* 
@@ -763,12 +765,27 @@ _perform_token_action(
       break;
 
     case COLON:
+    {
+      // after reading a key, we set the expecting_delimiter flag.
+      // if we encounter another key before this flag is cleared, then
+      // we are missing a delimiter between keys (comma).
+      // this flag is cleared after a successfull _json_add_item()
       parse_info->parsing_key = false;
       parse_info->parsing_value = true;
+      parse_info->expecting_delimiter = true;
       break;
+    }
 
     case QUOTE:
     {
+      if (parse_info->parsing_key && parse_info->expecting_delimiter)
+        return false;
+
+      // a special case for above delimiter check for strings, e.g.,:
+      // { "key1": "value" "key2": "value } <-- missing comma
+      if (!parse_info->inside_quotes && strlen(parse_info->parsed_value) > 0)
+        return false;
+
       // if value starts with a quote, it's a string type
       if (!parse_info->inside_quotes
           && parse_info->parsing_value 
