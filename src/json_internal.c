@@ -566,12 +566,26 @@ createandreturn:
   return array;
 }
 
+static bool
+_json_check_key_exists(
+  const struct json_t* const json,
+  const char* const search_key)
+{
+  for (size_t i = 0; i < json->n_items; ++i)
+    if (strncmp(json->items[i].key, search_key, JSON_MAX_KEY_LEN) == 0)
+      return true;
+
+  return false;
+}
+
 // an internal version of add_item to perform type casting
 static bool 
 _json_add_item(
   struct json_t* const json,
   struct _json_parse_info_t* const parse_info)
 {
+  if (_json_check_key_exists(json, parse_info->parsed_key))
+    return false;
 
   // initially these special cases have JSON_NOTYPE,
   // so we check them here after extracting their values
