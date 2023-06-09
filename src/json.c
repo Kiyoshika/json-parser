@@ -217,7 +217,8 @@ json_parse_from_string(
     .parsing_key = false,
     .parsing_value = false,
     .inside_quotes = false,
-    .previous_token = NONE
+    .previous_token = NONE,
+    .expecting_delimiter = false
   };
 
   if (!parse_info.parsed_value)

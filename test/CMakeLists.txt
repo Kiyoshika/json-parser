@@ -72,3 +72,8 @@ add_executable(json_empty_objects json_empty_objects.c)
 target_include_directories(json_empty_objects PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_empty_objects json)
 add_test(NAME json_empty_objects COMMAND json_empty_objects)
+
+add_executable(json_missing_colon json_missing_colon.c)
+target_include_directories(json_missing_colon PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_missing_colon json)
+add_test(NAME json_missing_colon COMMAND json_missing_colon)
