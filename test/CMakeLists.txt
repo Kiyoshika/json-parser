@@ -77,3 +77,8 @@ add_executable(json_missing_colon json_missing_colon.c)
 target_include_directories(json_missing_colon PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_missing_colon json)
 add_test(NAME json_missing_colon COMMAND json_missing_colon)
+
+add_executable(json_duplicate_key json_duplicate_key.c)
+target_include_directories(json_duplicate_key PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_duplicate_key json)
+add_test(NAME json_duplicate_key COMMAND json_duplicate_key)
