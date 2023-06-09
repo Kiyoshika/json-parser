@@ -153,7 +153,7 @@ This is an example of parsing and retrieving a value from a deeply-nested object
 
 Consider the following JSON (which is too hard to read in a single string):
 
-```text
+```json
 {
   "browsers": {
     "firefox": {
@@ -181,22 +181,22 @@ Let's say we want to retrive the `engine` field:
 
 char* json_string_2 = "{\"browsers\":{\"firefox\":{\"name\":\"Firefox\",\"pref_url\":\"about:config\",\"releases\":{\"1\":{\"release_date\":\"2004-11-09\",\"status\":\"retired\",\"engine\":\"Gecko\",\"engine_version\":\"1.7\"}}}}}";
 
-  struct json_t* json = json_parse_from_string(json_string);
-  if (!json)
-  {
-    // handle failure ...
-  }
+ struct json_t* json = json_parse_from_string(json_string);
+ if (!json)
+ {
+   // handle failure ...
+ }
 
-  // dealing with nested objects can get a little hard to read, but
-  // you can "chain" get calls that return objects like so:
-  
-  char* engine =  json_get(
-                  json_get(
-                  json_get(
-                  json_get(
-                  json_get(json, "browsers"), "firefox"), "releases"), "1"), "engine");
- 
- printf("Engine: %s\n", engine);
+ // dealing with nested objects can get a little hard to read, but
+ // you can "chain" get calls that return objects like so:
+
+ char* engine =  json_get(
+                 json_get(
+                 json_get(
+                 json_get(
+                 json_get(json, "browsers"), "firefox"), "releases"), "1"), "engine");
+
+printf("Engine: %s\n", engine);
 ```
 
 ### Adding item to an array
