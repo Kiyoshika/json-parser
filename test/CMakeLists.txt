@@ -82,3 +82,13 @@ add_executable(json_duplicate_key json_duplicate_key.c)
 target_include_directories(json_duplicate_key PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_duplicate_key json)
 add_test(NAME json_duplicate_key COMMAND json_duplicate_key)
+
+add_executable(json_getters json_getters.c)
+target_include_directories(json_getters PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_getters json)
+add_test(NAME json_getters COMMAND json_getters)
+
+add_executable(json_setters json_setters.c)
+target_include_directories(json_setters PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_setters json)
+add_test(NAME json_setters COMMAND json_setters)

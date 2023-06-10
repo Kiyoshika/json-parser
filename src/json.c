@@ -1,6 +1,6 @@
 #include "json.h"
 #include "json_array.h"
-#include "json_internal.c"
+#include "json_internal.h"
 #include <stdio.h>
 
 struct json_t*
@@ -144,51 +144,6 @@ json_add_item(
 
 }
 
-void*
-json_get(
-  const struct json_t* const json,
-  const char* const key)
-{
-  if (!json)
-    return NULL;
-
-  // extra safety incase user passes a non-terimated string
-  char _key[JSON_MAX_KEY_LEN] = {0};
-  strncpy(_key, key, JSON_MAX_KEY_LEN - 1);
-
-  for (size_t i = 0; i < json->n_items; ++i)
-  {
-    // not using const here incase user wants to modify item
-    // after calling get()
-    struct json_item_t* current_item = &json->items[i];
-
-    if (current_item->key_len == strlen(_key) 
-        && strncmp(current_item->key, _key, current_item->key_len) == 0)
-    {
-      switch (current_item->type)
-      {
-        case JSON_INT32:
-          return &current_item->value.int32;
-        case JSON_DECIMAL:
-          return &current_item->value.decimal;
-          break;
-        case JSON_STRING:
-          return current_item->value.str;
-        case JSON_OBJECT:
-          return current_item->value.object;
-        case JSON_ARRAY:
-          return current_item->value.array;
-        case JSON_BOOL:
-          return &current_item->value.boolean;
-        case JSON_NOTYPE:
-          return NULL;
-      }
-    }
-  }
-
-  return NULL;
-}
-
 struct json_t*
 json_parse_from_string(
   const char* const json_string)
@@ -234,20 +189,20 @@ json_parse_from_string(
       continue;
     }
 
-    current_token = _get_token_type(current_char);
+    current_token = _json_get_token_type(current_char);
 
     if ((current_token & expected_token) == 0)
       goto error;
 
-    if (!_perform_token_action(json, current_token, current_char, &parse_info))
+    if (!_json_perform_token_action(json, current_token, current_char, &parse_info))
       goto error;
 
     // in some casese the current_char/token may be updated after an action
     // e.g., parsing nested json body, so we just "refresh" them here
     current_char = json_string[parse_info.json_string_idx];
-    current_token = _get_token_type(current_char);
+    current_token = _json_get_token_type(current_char);
 
-    expected_token = _get_next_expected_token(current_token, parse_info.inside_quotes);
+    expected_token = _json_get_next_expected_token(current_token, parse_info.inside_quotes);
 
     parse_info.json_string_idx++;
 
