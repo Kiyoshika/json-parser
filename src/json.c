@@ -298,6 +298,7 @@ json_parse_from_file(
   fclose(json_file);
 
   struct json_t* json = json_parse_from_string_with_length(file_string, size);
+  free(file_string);
   if (!json)
     return NULL;
 
