@@ -63,6 +63,7 @@ json_free(
       case JSON_INT32:
       case JSON_DECIMAL:
       case JSON_BOOL:
+      case JSON_NULL:
       case JSON_NOTYPE:
         break;
     }
@@ -113,6 +114,9 @@ json_add_item(
      break;
     case JSON_BOOL:
       new_item.value.boolean = *(bool*)value;
+      break;
+    case JSON_NULL:
+      new_item.value.is_null = *(bool*)value;
     case JSON_NOTYPE:
       break;
   }
@@ -247,6 +251,8 @@ json_type_to_size(
     case JSON_ARRAY:
       return sizeof(struct json_array_t);
     case JSON_BOOL:
+      return sizeof(bool);
+    case JSON_NULL:
       return sizeof(bool);
     case JSON_NOTYPE:
       return 0;

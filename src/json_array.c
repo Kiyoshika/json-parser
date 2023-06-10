@@ -42,14 +42,65 @@ json_array_create()
 }
 
 bool
+json_array_append_null(
+  struct json_array_t* array)
+{
+ /* APPEND ITEM TYPE */
+  array->item_types[array->n_items] = JSON_NULL;
+  if (array->n_items + 1 == array->item_capacity)
+  {
+    size_t new_item_capacity = array->item_capacity * 2;
+    void* alloc = realloc(array->item_types, new_item_capacity * sizeof(*array->item_types));
+    if (!alloc)
+      return false;
+    array->item_capacity = new_item_capacity;
+    array->item_types = alloc;
+
+    void* alloc2 = realloc(array->item_pointers, new_item_capacity * sizeof(void*));
+    if (!alloc2)
+      return false;
+    array->item_pointers = alloc2;
+  }
+
+  /* COPY ITEM CONTENTS */
+  size_t sizeof_item = json_type_to_size(JSON_NULL);
+  if (sizeof_item + array->current_bytes >= array->byte_capacity)
+  {
+    size_t new_byte_capacity = array->byte_capacity *= 2;
+    void *alloc = realloc(array->items, new_byte_capacity);
+    if (!alloc)
+      return false;
+    array->byte_capacity = new_byte_capacity;
+    array->items = alloc;
+  }
+
+  bool item = true;
+  void* write_to = (char*)array->items + array->current_bytes;
+  memcpy(write_to, &item, sizeof_item);
+  array->current_bytes += sizeof_item;
+
+  /* STORE ORIGINAL POINTER TO free() */
+  array->item_pointers[array->n_items] = NULL;
+  array->n_items++;
+
+  return true;
+}
+
+bool
 json_array_append(
   struct json_array_t* array,
   enum json_type_e item_type,
   void* item)
 {
+  // need to handle this special case properly
+  // this is to prevent the user doing something wierd like
+  // json_array_append(array, JSON_NULL, false)
+  if (item_type == JSON_NULL)
+    return json_array_append_null(array);
+
   /* APPEND ITEM TYPE */
   array->item_types[array->n_items] = item_type;
-  if (array->n_items == array->item_capacity)
+  if (array->n_items + 1 == array->item_capacity)
   {
     size_t new_item_capacity = array->item_capacity * 2;
     void* alloc = realloc(array->item_types, new_item_capacity * sizeof(*array->item_types));
@@ -97,6 +148,7 @@ json_array_append(
     case JSON_DECIMAL:
     case JSON_NOTYPE:
     case JSON_BOOL:
+    case JSON_NULL:
       array->item_pointers[array->n_items] = NULL;
       break;
   }
@@ -157,6 +209,7 @@ json_array_free(
       case JSON_INT32:
       case JSON_DECIMAL:
       case JSON_BOOL:
+      case JSON_NULL:
       case JSON_NOTYPE:
         break;
     }

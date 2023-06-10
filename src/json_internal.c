@@ -421,7 +421,8 @@ _json_get_item_type(
 
   // spcial cases not to be confused with JSON_STRING
 
-  // TODO: add null here
+  if (strcmp(item_string, "null") == 0)
+    return JSON_NULL;
 
   if (strcmp(item_string, "true") == 0
       || strcmp(item_string, "false") == 0)
@@ -508,6 +509,14 @@ _json_parse_array(
         break;
       }
 
+      case JSON_NULL:
+      {
+        bool value = true;
+        if (!json_array_append(array, type, &value))
+          goto cleanup;
+        break;
+      }
+
       case JSON_OBJECT:
       {
         struct json_t* object = json_parse_from_string(item_string);
@@ -571,15 +580,15 @@ _json_add_item(
   // so we check them here after extracting their values
   if (parse_info->parsed_value_type == JSON_NOTYPE)
   {
-    // TODO: add null here
-    if (strcmp(parse_info->parsed_value, "true") == 0
-        || strcmp(parse_info->parsed_value, "false") == 0)
+    if (strcmp(parse_info->parsed_value, "null") == 0)
+      parse_info->parsed_value_type = JSON_NULL;
+
+    else if (strcmp(parse_info->parsed_value, "true") == 0
+            || strcmp(parse_info->parsed_value, "false") == 0)
       parse_info->parsed_value_type = JSON_BOOL;
     else
       return false;
   }
-
-  // TODO: check duplicate keys
 
   bool success = false;
   switch (parse_info->parsed_value_type)
@@ -666,6 +675,13 @@ _json_add_item(
         return false;
 
       success = json_add_item(json, JSON_BOOL, parse_info->parsed_key, &value);
+      break;
+    }
+
+    case JSON_NULL:
+    {
+      bool value = true;
+      success = json_add_item(json, JSON_NULL, parse_info->parsed_key, &value);
       break;
     }
 

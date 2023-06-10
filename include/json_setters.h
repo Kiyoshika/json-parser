@@ -33,3 +33,8 @@ json_set_bool(
   const struct json_t* const json,
   const char* const key,
   const bool value);
+
+bool
+json_set_null(
+  const struct json_t* const json,
+  const char* const key);

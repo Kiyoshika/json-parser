@@ -11,9 +11,6 @@
 #define JSON_MAX_KEY_LEN 51
 #endif
 
-// if we ever get larger than 8-byte addresses...
-#define JSON_ADDRESS_SIZE sizeof(void*)
-
 enum json_type_e 
 {
   JSON_NOTYPE,
@@ -22,7 +19,8 @@ enum json_type_e
 	JSON_STRING,
   JSON_OBJECT,
   JSON_ARRAY,
-  JSON_BOOL
+  JSON_BOOL,
+  JSON_NULL
 };
 
 struct json_item_t
@@ -36,6 +34,7 @@ struct json_item_t
     struct json_t* object;
     struct json_array_t* array;
     bool boolean;
+    bool is_null;
   } value;
 	char key[JSON_MAX_KEY_LEN];
   size_t key_len;

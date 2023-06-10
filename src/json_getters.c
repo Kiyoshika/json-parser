@@ -28,6 +28,8 @@ json_get(
       return current_item->value.array;
     case JSON_BOOL:
       return &current_item->value.boolean;
+    case JSON_NULL:
+      return &current_item->value.is_null;
     case JSON_NOTYPE:
       return NULL;
   }
@@ -105,4 +107,16 @@ json_get_bool(
   if (!key_exists)
     return NULL;
   return &json->items[idx].value.boolean;
+}
+
+bool
+json_get_isnull(
+  const struct json_t* const json,
+  const char* const key)
+{
+  bool key_exists = false;
+  size_t idx = _json_get_key_index(json, key, &key_exists);
+  if (!key_exists)
+    return true; // technically...if it doesn't exist I guess it's null...
+  return json->items[idx].type == JSON_NULL;
 }
