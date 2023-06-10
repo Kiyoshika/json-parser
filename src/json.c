@@ -138,10 +138,6 @@ json_add_item(
       return false;
     json->capacity = new_capacity;
     json->items = alloc;
-    // realloc doesn't guarantee nice clean zeros...so we
-    // do it ourselves. technically this is not strictly
-    // required, but sometimes it's helpful in debugging.
-    memset(&json->items[json->n_items], 0, (json->capacity + 1 - json->n_items) * sizeof(*json->items));
   }
 
   return true;
@@ -252,7 +248,7 @@ json_parse_from_string_with_length(
     new_str[i] = json_string[i];
     if (json_string[i] == '\0')
       break;
-    if (i == capacity)
+    if (i + 1 == capacity)
     {
       size_t new_capacity = capacity * 2;
       // redundant multiplication but explicit
@@ -276,6 +272,40 @@ json_parse_from_string_with_length(
   free(new_str);
 
   return json;
+}
+
+struct json_t*
+json_parse_from_file(
+  const char* const filepath)
+{
+  FILE* json_file = fopen(filepath, "r");
+  if (!json_file)
+    return NULL;
+
+  rewind(json_file);
+  if (fseek(json_file, 0, SEEK_END) == -1)
+    goto failure;
+
+  int size = ftell(json_file);
+  
+  rewind(json_file);
+
+  char* file_string = calloc(size, sizeof(char));
+  if (!file_string)
+    goto failure;
+
+  fread(file_string, sizeof(char), size, json_file);
+  fclose(json_file);
+
+  struct json_t* json = json_parse_from_string_with_length(file_string, size);
+  if (!json)
+    return NULL;
+
+  return json;
+
+failure:
+  fclose(json_file);
+  return NULL;
 }
 
 size_t
