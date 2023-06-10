@@ -23,11 +23,10 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * `null` type
 * (experimental) parsing directly into a struct
 * Array iterators
-* Value setters (for safer manipulation)
 * "safer" parsing from string (like `strncpy` instead of `strcpy`)
-* More convenient getters (to avoid a lot of casting)
 
 ### Known issues:
+* Empty string values break the parser (e.g., `{ "key": "" }`)
 * Escaped quotes and other special characters *may* break keys/values
 
 ## Basic Usage
@@ -56,9 +55,18 @@ if (!json)
   // handle failure ...
 }
 
+// OLD STYLE CASTING
 int32_t keyA = *(int32_t*)json_get(json, "keyA");
 double keyB = *(double*)json_get(json, "keyB");
 char* keyC = json_get(json, "keyC"); // no need to cast for char* type
+
+// NEW GETTERS (introduced 09 June 2023)
+// if you don't want to cast the values, you can directly dereference the function
+// (or keep the pointer, but if that's the case you may as well stick to original json_get)
+keyA = *json_get_int32(json, "keyA");
+keyB = *json_get_double(json, "keyB");
+// no need for dereferencing on pointer types (strings, objects, arrays)
+keyC = json_get_string(json, "keyC");
 
 json_free(&json);
 ```
