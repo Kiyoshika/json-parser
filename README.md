@@ -46,7 +46,7 @@ All keys in JSON are stack-allocated. This is controlled via `define JSON_MAX_KE
   * [Parsing from Raw String](#parsing-from-raw-string)
 * Usage:
   * [Updating Objects](#updating-objects)
-  * [Handling Null Values](#handling-null_values)
+  * [Handling Null Values](#handling-null-values)
 * Arrays:
   * [Parsing Arrays](#parsing-arrays)
   * [Adding Item to an Array](#adding-item-to-an-array)
@@ -113,7 +113,7 @@ NOTE: any heap-allocated objects will be free()'d prior to overwriting
   printf("%d\n", *json_get_int32(get, "y"));
 ```
 
-### Handling null values
+### Handling Null Values
 You can check or set null values using appropriate getters/setters.
 ```c
 #include "json.h"
