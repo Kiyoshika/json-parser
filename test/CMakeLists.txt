@@ -92,3 +92,8 @@ add_executable(json_setters json_setters.c)
 target_include_directories(json_setters PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_setters json)
 add_test(NAME json_setters COMMAND json_setters)
+
+add_executable(json_empty_strings json_empty_strings.c)
+target_include_directories(json_empty_strings PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_empty_strings json)
+add_test(NAME json_empty_strings COMMAND json_empty_strings)

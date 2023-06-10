@@ -633,12 +633,11 @@ _json_add_item(
 
     case JSON_STRING:
     {
-      // NOTE: we make a copy since the original parsed_info->parsed_value gets
-      // free'd after json_parse_...() ends
-      char* parsed_value_copy = strdup(parse_info->parsed_value);
-      if (!parsed_value_copy)
+      char* quote_string = _json_fetch_quote_string(parse_info->json_string, &parse_info->json_string_idx);
+
+      if (!quote_string)
         return false;
-      success = json_add_item(json, JSON_STRING, parse_info->parsed_key, parsed_value_copy);
+      success = json_add_item(json, JSON_STRING, parse_info->parsed_key, quote_string);
       break;
     }
 
@@ -784,7 +783,12 @@ _json_perform_token_action(
       if (!parse_info->inside_quotes
           && parse_info->parsing_value 
           && strlen(parse_info->parsed_value) == 0)
+      {
         parse_info->parsed_value_type = JSON_STRING;
+        if (!_json_add_item(json, parse_info))
+          return false;
+        break;
+      }
 
       parse_info->inside_quotes = !parse_info->inside_quotes;
 
