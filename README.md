@@ -16,9 +16,10 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * Nested objects
 * Nested arrays
 * Parsing from raw string
+* Parsing from a file
 
 ### Upcoming features:
-* Reading/writing to file
+* writing to file
 * Writing JSON object to string (deserialization)
 * (experimental) parsing directly into a struct
 * Array iterators
@@ -44,6 +45,7 @@ All keys in JSON are stack-allocated. This is controlled via `define JSON_MAX_KE
 ## Contents:
 * IO:
   * [Parsing from Raw String](#parsing-from-raw-string)
+  * [Parsing from File](#parsing-from-file)
 * Usage:
   * [Updating Objects](#updating-objects)
   * [Handling Null Values](#handling-null-values)
@@ -100,6 +102,23 @@ keyC = json_get_string(json, "keyC");
 json_free(&json);
 ```
 
+### Parsing from File
+Provide a file path containing JSON data (note that the extension does not have to be `.json` but used here for clarity).
+
+Under the hood this calls `json_parse_from_string_with_length` where the length is the size of the file in bytes.
+
+```c
+#include "json.h"
+
+// ...
+
+struct json_t* json = json_parse_from_file("myjson.json");
+if (!json)
+{
+  // handle error ...
+}
+```
+
 ## Usage
 ### Updating Objects
 You can update objects by using any of the setters. The original data types do not need to match.
@@ -136,10 +155,10 @@ You can check or set null values using appropriate getters/setters.
 char* json_string = "{ \"key\": 10 }";
 struct json_t* json = json_parse_from_string(json_string);
 
-json_check_isnull(json, "key"); // false
+json_get_isnull(json, "key"); // false
 
 json_set_null(json, "key");
-json_check_isnull(json, "key"); // true
+json_get_isnull(json, "key"); // true
 
 // the object now looks like: { "key": null }
 

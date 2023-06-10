@@ -112,3 +112,8 @@ add_executable(json_parse_from_string_with_length json_parse_from_string_with_le
 target_include_directories(json_parse_from_string_with_length PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_parse_from_string_with_length json)
 add_test(NAME json_parse_from_string_with_length COMMAND json_parse_from_string_with_length)
+
+add_executable(json_parse_from_file json_parse_from_file.c)
+target_include_directories(json_parse_from_file PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_parse_from_file json)
+add_test(NAME json_parse_from_file COMMAND json_parse_from_file)

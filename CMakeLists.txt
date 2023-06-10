@@ -16,3 +16,6 @@ include(CTest)
 enable_testing()
 
 add_subdirectory(test)
+
+file(COPY test/sample_file.json DESTINATION test)
+file(COPY test/complex_file.json DESTINATION test)
