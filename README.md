@@ -26,7 +26,6 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * "safer" parsing from string (like `strncpy` instead of `strcpy`)
 
 ### Known issues:
-* Empty string values break the parser (e.g., `{ "key": "" }`)
 * Escaped quotes and other special characters *may* break keys/values
 
 ## Basic Usage
