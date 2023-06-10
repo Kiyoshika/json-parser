@@ -1,56 +1,9 @@
-#include <ctype.h>
+#include "json.h"
+#include "json_array.h"
+#include "json_internal.h"
 
-// using bit masks to define token types so we can combine
-// multiple tokens using | and compare using & bit operators
-//
-// apparently binary literals are a GCC extension so using
-// hex literals instead (to try to be less compiler-specific)
-enum _token_e 
-{
-  // NULL token, used to initialize
-  NONE        = 0x00,   //0b00000000,       
-  // {
-  OPEN_BODY   = 0x01,   //0b00000001,
-  // }
-  CLOSE_BODY  = 0x02,   //0b00000010,
-  // "
-  QUOTE       = 0x04,   //0b00000100,
-  // ,
-  COMMA       = 0x08,   //0b00001000,
-  // :
-  COLON       = 0x10,   //0b00010000,
-  // [A-Za-z] + punctuation
-  TEXT        = 0x20,   //0b00100000,
-  // [0-9] + decimal
-  NUMERIC     = 0x40,   //0b01000000
-  // ' '
-  SPACE       = 0x80,   //0b10000000
-  // [
-  OPEN_ARRAY  = 0x100,  //0b100000000
-  // ]
-  CLOSE_ARRAY = 0x200,  //0b1000000000
-  // encountered unknown token
-  UNKNOWN     = 0x400,  //0b10000000000
-};
-
-struct _json_parse_info_t
-{
-  const char* const json_string;
-  size_t json_string_idx;
-  char parsed_key[JSON_MAX_KEY_LEN];
-  char* parsed_value;
-  size_t parsed_value_len;
-  size_t parsed_value_capacity;
-  enum json_type_e parsed_value_type;
-  bool parsing_key;
-  bool parsing_value;
-  bool inside_quotes;
-  enum _token_e previous_token;
-  bool expecting_delimiter;
-};
-
-static enum _token_e
-_get_token_type(
+enum _token_e
+_json_get_token_type(
   const char current_char)
 {
   switch (current_char)
@@ -91,8 +44,35 @@ _get_token_type(
   return UNKNOWN;
 }
 
-static uint16_t 
-_get_next_expected_token(
+size_t
+_json_get_key_index(
+  const struct json_t* const json,
+  const char* const key,
+  bool* key_exists)
+{
+  if (!json)
+  {
+    *key_exists = false;
+    return 0;
+  }
+
+  for (size_t i = 0; i < json->n_items; ++i)
+  {
+    struct json_item_t* current_item = &json->items[i];
+
+    if (strncmp(current_item->key, key, JSON_MAX_KEY_LEN) == 0)
+    {
+      *key_exists = true;
+      return i;
+    }
+  }
+
+  *key_exists = false;
+  return 0;
+}
+
+uint16_t 
+_json_get_next_expected_token(
   const enum _token_e current_token,
   const bool inside_quotes)
 {
@@ -143,7 +123,7 @@ _get_next_expected_token(
 // consumes any trailing whitespace and ensures no missing
 // delimiters/closure
 // e.g., to prevent things like [a b c] instead of [a, b, c]
-static bool
+bool
 _json_array_item_cleanup(
   const char* const array_string,
   size_t* idx,
@@ -162,7 +142,7 @@ _json_array_item_cleanup(
   return true;
 }
 
-static char*
+char*
 _json_fetch_body_string(
   const char* const json_string,
   size_t* idx)
@@ -208,7 +188,7 @@ _json_fetch_body_string(
   return NULL;
 }
 
-static char*
+char*
 _json_fetch_array_string(
   const char* const json_string,
   size_t* idx)
@@ -254,7 +234,7 @@ _json_fetch_array_string(
   return NULL;
 }
 
-static void
+void
 _json_reset_parse_info(
   struct _json_parse_info_t* const parse_info)
 {
@@ -269,7 +249,7 @@ _json_reset_parse_info(
   parse_info->expecting_delimiter = false;
 }
 
-static char* 
+char* 
 _json_fetch_quote_string(
   const char* const array_string,
   size_t* idx)
@@ -301,7 +281,7 @@ _json_fetch_quote_string(
   return NULL;
 }
 
-static char* 
+char* 
 _json_fetch_numeric_string(
   const char* const array_string,
   size_t* idx,
@@ -368,7 +348,7 @@ _json_fetch_numeric_string(
   return NULL;
 }
 
-static char*
+char*
 _json_fetch_array_item_string(
   const char* const array_string,
   size_t* idx,
@@ -414,8 +394,8 @@ _json_fetch_array_item_string(
   return item_string;
 }
 
-static enum json_type_e
-_get_item_type(
+enum json_type_e
+_json_get_item_type(
   const char* const item_string)
 {
   // ignore first set of whitespace (if any)
@@ -450,7 +430,7 @@ _get_item_type(
   return JSON_STRING;
 }
 
-static struct json_array_t*
+struct json_array_t*
 _json_parse_array(
   const char* const array_string)
 {
@@ -473,7 +453,7 @@ _json_parse_array(
     if (!item_string)
       goto cleanup;
 
-    enum json_type_e type = _get_item_type(item_string);
+    enum json_type_e type = _json_get_item_type(item_string);
 
     switch (type)
     {
@@ -566,7 +546,7 @@ createandreturn:
   return array;
 }
 
-static bool
+bool
 _json_check_key_exists(
   const struct json_t* const json,
   const char* const search_key)
@@ -579,7 +559,7 @@ _json_check_key_exists(
 }
 
 // an internal version of add_item to perform type casting
-static bool 
+bool 
 _json_add_item(
   struct json_t* const json,
   struct _json_parse_info_t* const parse_info)
@@ -699,7 +679,7 @@ _json_add_item(
   return success;
 }
 
-static void
+void
 _json_append_char_to_key(
   struct _json_parse_info_t* const parse_info,
   const char current_char)
@@ -710,7 +690,7 @@ _json_append_char_to_key(
   parse_info->parsed_key[key_len] = current_char;
 }
 
-static bool 
+bool 
 _json_append_char_to_value(
   struct _json_parse_info_t* const parse_info,
   const char current_char)
@@ -732,8 +712,8 @@ _json_append_char_to_value(
 
 #include <stdio.h>
 
-static bool 
-_perform_token_action(
+bool 
+_json_perform_token_action(
   struct json_t* const json,
   const enum _token_e current_token,
   const char current_char,

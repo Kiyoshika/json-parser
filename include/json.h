@@ -48,6 +48,10 @@ struct json_t
   size_t capacity;
 };
 
+#include "json_array.h"
+#include "json_getters.h"
+#include "json_setters.h"
+
 struct json_t*
 json_create();
 
@@ -61,11 +65,6 @@ json_add_item(
   const enum json_type_e type,
   const char* const key,
   void* value);
-
-void*
-json_get(
- const struct json_t* const json,
- const char* const key);
 
 struct json_t*
 json_parse_from_string(
