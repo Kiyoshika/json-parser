@@ -107,3 +107,8 @@ add_executable(json_set_with_new_type json_set_with_new_type.c)
 target_include_directories(json_set_with_new_type PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_set_with_new_type json)
 add_test(NAME json_set_with_new_type COMMAND json_set_with_new_type)
+
+add_executable(json_parse_from_string_with_length json_parse_from_string_with_length.c)
+target_include_directories(json_parse_from_string_with_length PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_parse_from_string_with_length json)
+add_test(NAME json_parse_from_string_with_length COMMAND json_parse_from_string_with_length)

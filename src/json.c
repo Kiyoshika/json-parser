@@ -234,6 +234,50 @@ error:
   return NULL;
 }
 
+struct json_t*
+json_parse_from_string_with_length(
+  const char* const json_string,
+  const size_t len)
+{
+  // read at most len characters
+  // if we find \0 then we can terminate early
+  size_t capacity = 100;
+  char* new_str = calloc(capacity, sizeof(char));
+  if (!new_str)
+    return NULL;
+
+  size_t i = 0;
+  for (; i < len; ++i)
+  {
+    new_str[i] = json_string[i];
+    if (json_string[i] == '\0')
+      break;
+    if (i == capacity)
+    {
+      size_t new_capacity = capacity * 2;
+      // redundant multiplication but explicit
+      void* alloc = realloc(new_str, new_capacity * sizeof(char));
+      if (!alloc)
+      {
+        free(new_str);
+        return NULL;
+      }
+      capacity = new_capacity;
+      new_str = alloc;
+    }
+  }
+
+  // if no terminator was found, append one to the end
+  if (i == len)
+    new_str[i] = '\0';
+
+
+  struct json_t* json = json_parse_from_string(new_str);
+  free(new_str);
+
+  return json;
+}
+
 size_t
 json_type_to_size(
   const enum json_type_e type)
