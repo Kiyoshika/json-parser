@@ -69,6 +69,11 @@ struct json_t*
 json_parse_from_string(
   const char* const json_string);
 
+struct json_t*
+json_parse_from_string_with_length(
+  const char* const json_string,
+  const size_t len);
+
 size_t
 json_type_to_size(
   const enum json_type_e type);

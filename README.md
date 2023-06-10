@@ -59,13 +59,26 @@ All keys in JSON are stack-allocated. This is controlled via `define JSON_MAX_KE
 ## IO
 ### Parsing from Raw String
 This is an example of parsing the most basic form of JSON.
+
+There are two primary ways to read JSON from strings:
+* `json_parse_from_string`
+  * ONLY use this if you guaranteed to have a null terminator, otherwise this is unsafe
+* `json_parse_from_string_with_length`
+  * A safer alternative that reads at most some specified number of bytes and appends a null terminator if one wasn't found
+
+Both methods will be shown below
+
 ```c
 #include "json.h"
 
 // ...
 
 char* json_string = "{ \"keyA\": 10, \"keyB\": 20.25, \"keyC\": \"hello\" }";
+// ** ONLY use this version if you can guarantee a null terminator **
 struct json_t* json = json_parse_from_string(json_string);
+// safer alternative for strings in the wild (in this case it will only read up
+// to the 46th bit which is the null terminator)
+struct json_t* json_safe = json_parse_from_string_with_length(json_string, 100);
 if (!json)
 {
   // handle failure ...
