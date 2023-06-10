@@ -90,6 +90,8 @@ json_free(&json);
 ## Usage
 ### Updating Objects
 You can update objects by using any of the setters. The original data types do not need to match.
+
+NOTE: any heap-allocated objects will be free()'d prior to overwriting
 ```c
   char* json_string = "{ \"key\": \"value\" }";
   struct json_t* json = json_parse_from_string(json_string);
@@ -97,6 +99,7 @@ You can update objects by using any of the setters. The original data types do n
   printf("%s\n", json_get_string(json, "key"));
 
   // replace string with int32
+  // NOTE: "value" gets deallocated
   json_set_int32(json, "key", 25);
   printf("%d\n", *json_get_int32(json, "key"));
 
