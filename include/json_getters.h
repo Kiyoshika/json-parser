@@ -32,3 +32,8 @@ bool*
 json_get_bool(
   const struct json_t* const json,
   const char* const key);
+
+bool
+json_get_isnull(
+  const struct json_t* const json,
+  const char* const key);

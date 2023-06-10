@@ -97,3 +97,13 @@ add_executable(json_empty_strings json_empty_strings.c)
 target_include_directories(json_empty_strings PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_empty_strings json)
 add_test(NAME json_empty_strings COMMAND json_empty_strings)
+
+add_executable(json_null_values json_null_values.c)
+target_include_directories(json_null_values PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_null_values json)
+add_test(NAME json_null_values COMMAND json_null_values)
+
+add_executable(json_set_with_new_type json_set_with_new_type.c)
+target_include_directories(json_set_with_new_type PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_set_with_new_type json)
+add_test(NAME json_set_with_new_type COMMAND json_set_with_new_type)

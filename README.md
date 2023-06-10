@@ -10,7 +10,7 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 ## Overview
 ### Currently supported features:
 * Basic objects with the following datatypes:
-  * int32, double, bool, string, object, array
+  * int32, double, bool, string, object, array, null
 * Mixed-type arrays
   * e.g., `[1, 3.14159, "hello"]`
 * Nested objects
@@ -20,26 +20,43 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 ### Upcoming features:
 * Reading/writing to file
 * Writing JSON object to string (deserialization)
-* `null` type
 * (experimental) parsing directly into a struct
 * Array iterators
 * "safer" parsing from string (like `strncpy` instead of `strcpy`)
+* Setting array values to different types
+  * Currently you can only modify arrays using the pointers from `json_array_get_...()`
 
 ### Known issues:
 * Escaped quotes and other special characters *may* break keys/values
 
-## Basic Usage
-Before going over usage, here are the type maps:
+# Examples
+Before going over usage examples, here are the type maps:
 * int32 - `JSON_INT32`
 * double - `JSON_DECIMAL`
 * bool - `JSON_BOOL`
-* null - not supported yet...
+* null - `JSON_NULL`
 * array - `JSON_ARRAY`
 * object - `JSON_OBJECT`
 
 ### Important Note
 All keys in JSON are stack-allocated. This is controlled via `define JSON_MAX_KEY_LEN` in `json.h`. If you expect larger keys, please change this prior to building. The default is currently `50` chars (excluding null term).
 
+## Contents:
+* IO:
+  * [Parsing from Raw String](#parsing-from-raw-string)
+* Usage:
+  * [Updating Objects](#updating-objects)
+  * [Handling Null Values](#handling-null_values)
+* Arrays:
+  * [Parsing Arrays](#parsing-arrays)
+  * [Adding Item to an Array](#adding-item-to-an-array)
+  * [Arrays with Mixed Types](#arrays-with-mixed-types)
+* Objects:
+  * [Parsing Nested Objects](#parsing-nested-objects)
+  * [Deeply Nested Objects](#deeply-nested-objects)
+  * [Adding Item to an Object](#adding-item-to-an-object)
+
+## IO
 ### Parsing from Raw String
 This is an example of parsing the most basic form of JSON.
 ```c
@@ -70,7 +87,66 @@ keyC = json_get_string(json, "keyC");
 json_free(&json);
 ```
 
-### Parsing arrays
+## Usage
+### Updating Objects
+You can update objects by using any of the setters. The original data types do not need to match.
+```c
+  char* json_string = "{ \"key\": \"value\" }";
+  struct json_t* json = json_parse_from_string(json_string);
+
+  printf("%s\n", json_get_string(json, "key"));
+
+  // replace string with int32
+  json_set_int32(json, "key", 25);
+  printf("%d\n", *json_get_int32(json, "key"));
+
+  // replace int32 with object
+  char* new_obj_str = "{ \"x\": 10, \"y\": 20 }";
+  struct json_t* new_obj = json_parse_from_string(new_obj_str);
+  json_set_object(json, "key", &new_obj);
+
+  struct json_t* get = json_get_object(json);
+  printf("%d\n", *json_get_int32(get, "x"));
+  printf("%d\n", *json_get_int32(get, "y"));
+```
+
+### Handling null values
+You can check or set null values using appropriate getters/setters.
+```c
+#include "json.h"
+
+// ...
+
+char* json_string = "{ \"key\": 10 }";
+struct json_t* json = json_parse_from_string(json_string);
+
+json_check_isnull(json, "key"); // false
+
+json_set_null(json, "key");
+json_check_isnull(json, "key"); // true
+
+// the object now looks like: { "key": null }
+
+json_free(&json);
+```
+
+NOTE: If you use `json_set_null()` on a heap-allocated item, it will be free()'d.
+```c
+#include "json.h"
+
+// ...
+
+char* json_string = "{ \"key\": \"my string\" }";
+struct json_t* json = json_parse_from_string(json_string);
+
+// this will deallocate "my string"
+json_set_null(json, "key");
+
+json_free(&json);
+```
+
+## Arrays
+### Parsing Arrays
 This is an example showing how to deal with arrays/nested arrays
 ```c
 #include "json.h"
@@ -104,7 +180,7 @@ char* a = *(char**)json_array_get_fixed(str_arr, 0, JSON_STRING);
 json_free(&json);
 ```
 
-### Arrays with mixed types
+### Arrays with Mixed Types
 This example shows how to deal with mixed-type arrays
 ```c
 #include "json.h"
@@ -129,7 +205,28 @@ char* valu3 = *(char**)json_array_get_mixed(array, 2);
 json_free(&json);
 ```
 
-### Parsing nested objects
+### Adding Item to an Array
+Items can be added to an array by providing the type and pointer
+```c
+#include "json.h"
+#include "json_array.h"
+
+// ...
+
+// assume we get this from somewhere (e.g., parsing a string)
+struct json_array_t* array = ...;
+
+// note that since JSON supports multi-type arrays, it doesn't
+// matter what the other types are (assuming array is non-empty
+int32_t value = 24;
+if (!json_array_append(array, JSON_INT32, &item))
+{
+  // something went wrong (e.g., out of memory, etc)
+}
+```
+
+## Objects
+### Parsing Nested Objects
 This example shows how to fetch items in a nested object.
 ```c
 #include "json.h"
@@ -155,7 +252,7 @@ char* nestedC = json_get(nested, "nestedC"); // no need to cast char* types
 json_free(&json);
 ```
 
-### Deeply nested object
+### Deeply Nested Objects
 This is an example of parsing and retrieving a value from a deeply-nested object.
 
 Consider the following JSON (which is too hard to read in a single string):
@@ -206,27 +303,7 @@ char* json_string_2 = "{\"browsers\":{\"firefox\":{\"name\":\"Firefox\",\"pref_u
 printf("Engine: %s\n", engine);
 ```
 
-### Adding item to an array
-Items can be added to an array by providing the type and pointer
-```c
-#include "json.h"
-#include "json_array.h"
-
-// ...
-
-// assume we get this from somewhere (e.g., parsing a string)
-struct json_array_t* array = ...;
-
-// note that since JSON supports multi-type arrays, it doesn't
-// matter what the other types are (assuming array is non-empty
-int32_t value = 24;
-if (!json_array_append(array, JSON_INT32, &item))
-{
-  // something went wrong (e.g., out of memory, etc)
-}
-```
-
-### Adding item to an object
+### Adding Item to an Object
 Items can be added to an object by providing the key, type and pointer.
 
 Note that duplicate keys are not allowed and will return false.
@@ -245,3 +322,5 @@ if (!json_add_item(json, JSON_INT32, "myvalue", &value))
   // something went wrong (e.g., out of memory, etc)
 }
 ```
+
+
