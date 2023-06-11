@@ -384,7 +384,7 @@ _json_resize_string(
   void* alloc = realloc(*to_string, new_capacity);
   if (!alloc)
     return false;
-  *to_string= alloc;
+  *to_string = alloc;
   *capacity = new_capacity;
   return true;
 }
@@ -476,6 +476,7 @@ _json_value_to_string(
         return false;
       if (!_json_write_value_buffer_to_string(json_string, to_string, to_string_len, to_string_capacity))
         return false;
+      free(json_string);
       break;
     }
 
