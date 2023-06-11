@@ -132,3 +132,8 @@ add_executable(json_array_append_types json_array_append_types.c)
 target_include_directories(json_array_append_types PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_array_append_types json)
 add_test(NAME json_array_append_types COMMAND json_array_append_types)
+
+add_executable(json_to_string json_to_string.c)
+target_include_directories(json_to_string PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_to_string json)
+add_test(NAME json_to_string COMMAND json_to_string)

@@ -374,3 +374,170 @@ json_type_to_size(
 
   return 0;
 }
+
+static bool 
+_json_resize_string(
+  char** to_string,
+  size_t* capacity)
+{
+  size_t new_capacity = *capacity * 2;
+  void* alloc = realloc(*to_string, new_capacity);
+  if (!alloc)
+    return false;
+  *to_string= alloc;
+  *capacity = new_capacity;
+  return true;
+}
+
+static bool
+_json_write_value_buffer_to_string(
+  char* formatted_buffer,
+  char** to_string,
+  size_t* to_string_len,
+  size_t* to_string_capacity)
+{
+  size_t formatted_buffer_len = strlen(formatted_buffer);
+  if (*to_string_len + formatted_buffer_len  >= *to_string_capacity
+      && !_json_resize_string(to_string, to_string_capacity))
+    return false;
+  strncat(*to_string, formatted_buffer, formatted_buffer_len);
+  *to_string_len += formatted_buffer_len;
+  return true;
+}
+
+static bool 
+_json_value_to_string(
+  char* formatted_buffer,
+  size_t max_buffer_len,
+  const struct json_item_t* const item,
+  char** to_string,
+  size_t* to_string_len,
+  size_t* to_string_capacity)
+{
+  switch (item->type)
+  {
+    case JSON_INT32:
+    {
+      snprintf(formatted_buffer, max_buffer_len, "%d", item->value.int32);
+      if (!_json_write_value_buffer_to_string(formatted_buffer, to_string, to_string_len, to_string_capacity))
+        return false;
+      break;
+    }
+
+    case JSON_DECIMAL:
+    {
+      snprintf(formatted_buffer, max_buffer_len, "%f", item->value.decimal);
+      if (!_json_write_value_buffer_to_string(formatted_buffer, to_string, to_string_len, to_string_capacity))
+        return false;
+      break;
+    }
+
+    case JSON_BOOL:
+    {
+      if (item->value.boolean) 
+        snprintf(formatted_buffer, max_buffer_len, "%s", "true");
+      else
+        snprintf(formatted_buffer, max_buffer_len, "%s", "false");
+      if (!_json_write_value_buffer_to_string(formatted_buffer, to_string, to_string_len, to_string_capacity))
+        return false;
+      break;
+    }
+
+    case JSON_NULL:
+    {
+      snprintf(formatted_buffer, max_buffer_len, "%s", "null");
+      if (!_json_write_value_buffer_to_string(formatted_buffer, to_string, to_string_len, to_string_capacity))
+        return false;
+      break;
+    }
+
+    case JSON_STRING:
+    {
+      // need to add quotes before an after string content
+      if (!_json_write_value_buffer_to_string("\"", to_string, to_string_len, to_string_capacity))
+        return false;
+      if (!_json_write_value_buffer_to_string(item->value.str, to_string, to_string_len, to_string_capacity))
+        return false;
+      if (!_json_write_value_buffer_to_string("\"", to_string, to_string_len, to_string_capacity))
+        return false;
+      break;
+    }
+
+    case JSON_ARRAY:
+    {
+      // TODO:
+      break;
+    }
+
+    case JSON_OBJECT:
+    {
+      char* json_string = json_to_string(item->value.object);
+      if (!json_string)
+        return false;
+      if (!_json_write_value_buffer_to_string(json_string, to_string, to_string_len, to_string_capacity))
+        return false;
+      break;
+    }
+
+    case JSON_NOTYPE:
+      break;
+  }
+
+  return true;
+}
+
+char*
+json_to_string(
+  const struct json_t* const json)
+{
+  size_t len = 0;
+  size_t capacity = 100;
+
+  char* to_string = calloc(capacity, sizeof(char));
+  if (!to_string)
+    return NULL;
+
+  strncat(to_string, "{", 2);
+  len = 1;
+
+  for (size_t i = 0; i < json->n_items; ++i)
+  {
+    // +3 for wrapper quotes and colon
+    if (len + json->items[i].key_len + 3 >= capacity
+        && !_json_resize_string(&to_string, &capacity))
+      goto failure;
+    
+    // write "key_name": (space)
+    strncat(to_string, "\"", 2);
+    strncat(to_string, json->items[i].key, json->items[i].key_len);
+    strncat(to_string, "\":", 3);
+    len += json->items[i].key_len + 3;
+
+    // 256 is a little overkill but shouldn't be a noticeable problem
+    char formatted_buffer[256] = {0};
+    if (!_json_value_to_string(
+          formatted_buffer,
+          256,
+          &json->items[i],
+          &to_string,
+          &len,
+          &capacity))
+      goto failure;
+    
+    // add comma
+    if (i < json->n_items - 1
+        && !_json_write_value_buffer_to_string(",", &to_string, &len, &capacity))
+      goto failure;
+
+    }
+
+  // write closing body
+  if (!_json_write_value_buffer_to_string("}", &to_string, &len, &capacity))
+    goto failure;
+  
+  return to_string;
+
+failure:
+  free(to_string);
+  return NULL;
+}

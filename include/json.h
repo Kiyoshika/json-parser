@@ -122,4 +122,8 @@ size_t
 json_type_to_size(
   const enum json_type_e type);
 
+char*
+json_to_string(
+  const struct json_t* const json);
+
 #endif
