@@ -17,13 +17,12 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * Nested arrays
 * Parsing from raw string
 * Parsing from a file
+* Modifying objects and arrays
 
 ### Upcoming features:
 * writing to file
 * Writing JSON object to string (deserialization)
 * (experimental) parsing directly into a struct
-* Setting array values to different types
-  * Currently you can only modify arrays using the pointers from `json_array_get_...()`
 
 ### Known issues:
 * Escaped quotes and other special characters *may* break keys/values
