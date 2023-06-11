@@ -98,31 +98,7 @@ json_add_item(
     .key_len = 0,
   };
 
-  switch (type)
-  {
-    case JSON_INT32:
-      new_item.value.int32 = *(int32_t*)value;
-      break;
-    case JSON_DECIMAL:
-      new_item.value.decimal = *(double*)value;
-      break;
-    case JSON_STRING:
-      new_item.value.str = value; // this is a heap copy
-      break;
-    case JSON_OBJECT:
-      new_item.value.object = value; // this is a heap copy
-      break;
-    case JSON_ARRAY:
-     new_item.value.array = value; // this is a heap copy
-     break;
-    case JSON_BOOL:
-      new_item.value.boolean = *(bool*)value;
-      break;
-    case JSON_NULL:
-      new_item.value.is_null = *(bool*)value;
-    case JSON_NOTYPE:
-      break;
-  }
+  _json_set_item_value(&new_item, type, value); 
 
   strncpy(new_item.key, key, JSON_MAX_KEY_LEN - 1);
   new_item.key_len = strlen(new_item.key);

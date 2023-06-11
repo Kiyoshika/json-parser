@@ -2,33 +2,6 @@
 #include "json_array.h"
 #include "json_internal.h"
 
-// when setting a new item, need to check if the
-// current item is heap-allocated before overwriting it
-static void
-_json_deallocate_item(
-  struct json_item_t* item)
-{
-  switch (item->type)
-  {
-    case JSON_OBJECT:
-      json_free(&item->value.object);
-      break;
-    case JSON_ARRAY:
-      json_array_free(&item->value.array);
-      break;
-    case JSON_STRING:
-      free(item->value.str);
-      break;
-    // no-ops
-    case JSON_INT32:
-    case JSON_DECIMAL:
-    case JSON_BOOL:
-    case JSON_NULL:
-    case JSON_NOTYPE:
-      break;
-  }
-}
-
 bool
 json_set_int32(
   const struct json_t* const json,

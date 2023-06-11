@@ -1,4 +1,5 @@
 #include "json.h"
+#include "json_array.h"
 #include <stdio.h>
 
 int main()
@@ -48,21 +49,21 @@ int main()
   }
 
   struct json_array_t* arr = json_get_array(json, "key4");
-  int32_t arr0 = *(int32_t*)json_array_get_fixed(arr, 0, JSON_INT32);
+  int32_t arr0 = *(int32_t*)json_array_get(arr, 0);
   if (arr0 != 1)
   {
     fprintf(stderr, "Expected key4[0] to have value 1 but got %d.\n", arr0);
     goto cleanup;
   }
 
-  int32_t arr1 = *(int32_t*)json_array_get_fixed(arr, 1, JSON_INT32);
+  int32_t arr1 = *(int32_t*)json_array_get(arr, 1);
   if (arr1 != 2)
   {
     fprintf(stderr, "Expected key4[1] to have value 2 but got %d.\n", arr1);
     goto cleanup;
   }
 
-  int32_t arr2 = *(int32_t*)json_array_get_fixed(arr, 2, JSON_INT32);
+  int32_t arr2 = *(int32_t*)json_array_get(arr, 2);
   if (arr2 != 3)
   {
     fprintf(stderr, "Expected key4[2] to have value 3 but got %d.\n", arr2);

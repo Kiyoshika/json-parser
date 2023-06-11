@@ -140,4 +140,18 @@ _json_perform_token_action(
   const char current_char,
   struct _json_parse_info_t* const parse_info);
 
+void
+_json_set_item_value(
+  struct json_item_t* item,
+  const enum json_type_e type,
+  void* value);
+
+void*
+_json_get_item_value(
+  struct json_item_t* const item);
+
+void
+_json_deallocate_item(
+  struct json_item_t* item);
+
 #endif

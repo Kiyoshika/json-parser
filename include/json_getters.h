@@ -1,3 +1,6 @@
+#ifndef JSON_GETTERS_H
+#define JSON_GETTERS_H
+
 void*
 json_get(
  const struct json_t* const json,
@@ -37,3 +40,5 @@ bool
 json_get_isnull(
   const struct json_t* const json,
   const char* const key);
+
+#endif
