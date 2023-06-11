@@ -157,7 +157,7 @@ NOTE: any heap-allocated objects will be free()'d prior to overwriting.
   // replace int32 with object
   char* new_obj_str = "{ \"x\": 10, \"y\": 20 }";
   struct json_t* new_obj = json_parse_from_string(new_obj_str);
-  json_set_object(json, "key", &new_obj);
+  json_set_object(json, "key", new_obj);
 
   struct json_t* get = json_get_object(json);
   printf("%d\n", *json_get_int32(get, "x"));
