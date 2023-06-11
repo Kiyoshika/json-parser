@@ -921,10 +921,9 @@ _json_perform_token_action(
 void
 _json_set_item_value(
   struct json_item_t* item,
-  const enum json_type_e type,
   void* value)
 {
-  switch (type)
+  switch (item->type)
   {
     case JSON_INT32:
       item->value.int32 = *(int32_t*)value;

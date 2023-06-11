@@ -92,21 +92,15 @@ json_add_item(
 	if (_json_check_key_exists(json, key))
 		return false;
 
-  struct json_item_t new_item = {
-    .type = type,
-    .key = {0},
-    .key_len = 0,
-  };
-
-  _json_set_item_value(&new_item, type, value); 
-
-  strncpy(new_item.key, key, JSON_MAX_KEY_LEN - 1);
-  new_item.key_len = strlen(new_item.key);
-
   struct json_item_t* current_item
     = &json->items[json->n_items];
 
-  memcpy(current_item, &new_item, sizeof(new_item));
+  current_item->type = type;
+  _json_set_item_value(current_item, value); 
+
+  strncpy(current_item->key, key, JSON_MAX_KEY_LEN - 1);
+  current_item->key_len = strlen(current_item->key);
+
   json->n_items++;
 
   if (json->n_items >= json->capacity)

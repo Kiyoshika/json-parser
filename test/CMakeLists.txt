@@ -122,3 +122,8 @@ add_executable(json_adders json_adders.c)
 target_include_directories(json_adders PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_adders json)
 add_test(NAME json_adders COMMAND json_adders)
+
+add_executable(json_array_set json_array_set.c)
+target_include_directories(json_array_set PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_array_set json)
+add_test(NAME json_array_set COMMAND json_array_set)
