@@ -26,7 +26,7 @@ int main()
 
   json_set_int32(json, "int", 10);
   json_set_decimal(json, "decimal", 3.14159);
-  json_set_string(json, "string", "hello there");
+  json_set_string(json, "string", strdup("hello there"));
   json_set_bool(json, "bool", true);
   
   struct json_array_t* arr = json_array_create();

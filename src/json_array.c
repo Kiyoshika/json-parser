@@ -83,26 +83,7 @@ json_array_append(
   return _json_array_append_item(array, item_type, value);
 }
 
-void*
-json_array_get(
-  const struct json_array_t* const array,
-  const size_t idx)
-{
-  return _json_get_item_value(&array->items[idx]);
-}
 
-void
-json_array_set(
-  struct json_array_t* const array,
-  const size_t idx,
-  const enum json_type_e type,
-  void* value)
-{
-  struct json_item_t* current_item = &array->items[idx];
-  _json_deallocate_item(current_item);
-  current_item->type = type;
-  _json_set_item_value(current_item, value);
-}
 
 void
 json_array_free(
