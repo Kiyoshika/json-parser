@@ -37,13 +37,13 @@ int main()
   item = 3;
   json_array_append(arr, JSON_INT32, &item);
   
-  json_set_array(json, "array", &arr);
+  json_set_array(json, "array", arr);
 
   // too lazy to create the object from scratch so just going to parse it
   char* obj_string = "{ \"a\": 1, \"b\": 2 }";
   struct json_t* obj = json_parse_from_string(obj_string);
   
-  json_set_object(json, "object", &obj);
+  json_set_object(json, "object", obj);
 
   int32_t valint = *json_get_int32(json, "int");
   if (valint != 10)

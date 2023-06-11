@@ -20,13 +20,13 @@ bool
 json_set_object(
   const struct json_t* const json,
   const char* const key,
-  struct json_t** value);
+  struct json_t* value);
 
 bool
 json_set_array(
   const struct json_t* const json,
   const char* const key,
-  struct json_array_t** value);
+  struct json_array_t* value);
 
 bool
 json_set_bool(

@@ -117,3 +117,8 @@ add_executable(json_parse_from_file json_parse_from_file.c)
 target_include_directories(json_parse_from_file PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_parse_from_file json)
 add_test(NAME json_parse_from_file COMMAND json_parse_from_file)
+
+add_executable(json_adders json_adders.c)
+target_include_directories(json_adders PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_adders json)
+add_test(NAME json_adders COMMAND json_adders)

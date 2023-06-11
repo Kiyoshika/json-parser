@@ -573,9 +573,6 @@ _json_add_item(
   struct json_t* const json,
   struct _json_parse_info_t* const parse_info)
 {
-  if (_json_check_key_exists(json, parse_info->parsed_key))
-    return false;
-
   // initially these special cases have JSON_NOTYPE,
   // so we check them here after extracting their values
   if (parse_info->parsed_value_type == JSON_NOTYPE)

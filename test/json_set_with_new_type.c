@@ -61,7 +61,7 @@ int main()
     fprintf(stderr, "Coudln't parse value4.\n");
     goto cleanup;
   }
-  json_set_object(json, "key", &value4);
+  json_set_object(json, "key", value4);
   if (json->items[0].type != JSON_OBJECT)
   {
     fprintf(stderr, "Expected type to be JSON_OBJECT.\n");
