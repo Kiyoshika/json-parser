@@ -127,3 +127,8 @@ add_executable(json_array_getters_setters json_array_getters_setters.c)
 target_include_directories(json_array_getters_setters PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_array_getters_setters json)
 add_test(NAME json_array_getters_setters COMMAND json_array_getters_setters)
+
+add_executable(json_array_append_types json_array_append_types.c)
+target_include_directories(json_array_append_types PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_array_append_types json)
+add_test(NAME json_array_append_types COMMAND json_array_append_types)

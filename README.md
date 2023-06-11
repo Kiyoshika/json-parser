@@ -1,10 +1,6 @@
 # JSON Parser for C
 I've been wanting to write a JSON parser for a while just for the hell of it, so here's my attempt.
 
-NOTE: this is still under construction, but pretty usable so far.
-
-Due to being under construction, the API is incomplete and unstable (i.e., may change).
-
 If you notice a bug (that's not alreay mentioned in the issues) please report it! (Or fix it and submit a PR)
 
 ## Overview
@@ -28,6 +24,8 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * Escaped quotes and other special characters *may* break keys/values
 
 # Examples
+Note that the examples below don't cover everything in the API; it's encouraged to peek at the [headers](include/) for a more complete API reference.
+
 Before going over usage examples, here are the type maps:
 * int32 - `JSON_INT32`
 * double - `JSON_DECIMAL`
