@@ -86,7 +86,7 @@ bool
 json_set_object(
   const struct json_t* const json,
   const char* const key,
-  struct json_t** value)
+  struct json_t* value)
 {
   bool key_exists = false;
   size_t idx = _json_get_key_index(json, key, &key_exists);
@@ -95,7 +95,7 @@ json_set_object(
   struct json_item_t* item = &json->items[idx];
   _json_deallocate_item(item);
   item->type = JSON_OBJECT;
-  item->value.object = *value;
+  item->value.object = value;
   return true;
 }
 
@@ -103,7 +103,7 @@ bool
 json_set_array(
   const struct json_t* const json,
   const char* const key,
-  struct json_array_t** value)
+  struct json_array_t* value)
 {
   bool key_exists = false;
   size_t idx = _json_get_key_index(json, key, &key_exists);
@@ -112,7 +112,7 @@ json_set_array(
   struct json_item_t* item = &json->items[idx];
   _json_deallocate_item(item);
   item->type = JSON_ARRAY;
-  item->value.array = *value;
+  item->value.array = value;
   return true;
 }
 

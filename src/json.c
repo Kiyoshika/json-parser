@@ -89,6 +89,9 @@ json_add_item(
   if (strlen(key) == 0)
     return false;
 
+	if (_json_check_key_exists(json, key))
+		return false;
+
   struct json_item_t new_item = {
     .type = type,
     .key = {0},
@@ -142,6 +145,72 @@ json_add_item(
 
   return true;
 
+}
+
+bool
+json_add_int32(
+	struct json_t* const json,
+	const char* const key,
+	int32_t value)
+{
+	return json_add_item(json, JSON_INT32, key, &value);
+}
+
+bool
+json_add_decimal(
+	struct json_t* const json,
+	const char* const key,
+	double value)
+{
+	return json_add_item(json, JSON_DECIMAL, key, &value);
+}
+
+bool
+json_add_bool(
+	struct json_t* const json,
+	const char* const key,
+	bool value)
+{
+	return json_add_item(json, JSON_BOOL, key, &value);
+}
+
+bool
+json_add_string(
+	struct json_t* const json,
+	const char* const key,
+	char* const value)
+{
+	char* value_cpy = strdup(value);
+	if (!value_cpy)
+		return false;
+	return json_add_item(json, JSON_STRING, key, value_cpy);
+}
+
+bool
+json_add_object(
+	struct json_t* const json,
+	const char* const key,
+	struct json_t* const value)
+{
+	return json_add_item(json, JSON_OBJECT, key, value);
+}
+
+bool
+json_add_array(
+	struct json_t* const json,
+	const char* const key,
+	struct json_array_t* const value)
+{
+	return json_add_item(json, JSON_ARRAY, key, value);
+}
+
+bool
+json_add_null(
+	struct json_t* const json,
+	const char* const key)
+{
+	bool value = true;
+	return json_add_item(json, JSON_NULL, key, &value);
 }
 
 struct json_t*

@@ -58,7 +58,7 @@ int main()
     fprintf(stderr, "Couldn't parse new_json.\n");
     goto cleanup;
   }
-  json_set_object(json, "key4", &new_json);
+  json_set_object(json, "key4", new_json);
   if (json_get_isnull(json, "key4"))
   {
     fprintf(stderr, "Expected key4 to no longer be NULL after set_object.\n");
