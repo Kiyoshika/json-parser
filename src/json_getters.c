@@ -12,29 +12,7 @@ json_get(
   if (!key_exists)
     return NULL;
 
-  struct json_item_t* current_item = &json->items[idx];
-  switch (current_item->type)
-  {
-    case JSON_INT32:
-      return &current_item->value.int32;
-    case JSON_DECIMAL:
-      return &current_item->value.decimal;
-      break;
-    case JSON_STRING:
-      return current_item->value.str;
-    case JSON_OBJECT:
-      return current_item->value.object;
-    case JSON_ARRAY:
-      return current_item->value.array;
-    case JSON_BOOL:
-      return &current_item->value.boolean;
-    case JSON_NULL:
-      return &current_item->value.is_null;
-    case JSON_NOTYPE:
-      return NULL;
-  }
-
-  return NULL;
+  return _json_get_item_value(&json->items[idx]);
 }
 
 int32_t*

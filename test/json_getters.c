@@ -70,21 +70,21 @@ int main()
 
   // this is tied to the root JSON, so it is NOT freed separately
   struct json_array_t* valarray = json_get_array(json, "array");
-  int32_t i0 = *(int32_t*)json_array_get_fixed(valarray, 0, JSON_INT32);
+  int32_t i0 = *(int32_t*)json_array_get(valarray, 0);
   if (i0 != 1)
   {
     fprintf(stderr, "Expected array[0] to be 1 but got %d.\n", i0);
     goto cleanup;
   }
 
-  int32_t i1 = *(int32_t*)json_array_get_fixed(valarray, 1, JSON_INT32);
+  int32_t i1 = *(int32_t*)json_array_get(valarray, 1);
   if (i1 != 2)
   {
     fprintf(stderr, "Expected array[1] to be 2 but got %d.\n", i1);
     goto cleanup;
   }
 
-  int32_t i2 = *(int32_t*)json_array_get_fixed(valarray, 2, JSON_INT32);
+  int32_t i2 = *(int32_t*)json_array_get(valarray, 2);
   if (i2 != 3)
   {
     fprintf(stderr, "Expected array[2] to be 3 but got %d.\n", i2);

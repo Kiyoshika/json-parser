@@ -17,7 +17,7 @@ int main()
 
   struct json_array_t* array_obj = json_get(json, "array_obj");
 
-  struct json_t* person1 = json_array_get_fixed(array_obj, 0, JSON_OBJECT);
+  struct json_t* person1 = json_array_get(array_obj, 0);
   char*   person1_name = json_get(person1, "name");
   int32_t person1_age = *(int32_t*)json_get(person1, "age");
 
@@ -36,7 +36,7 @@ int main()
 
 
 
-  struct json_t* person2 = json_array_get_fixed(array_obj, 1, JSON_OBJECT);
+  struct json_t* person2 = json_array_get(array_obj, 1);
   char*   person2_name = json_get(person2, "name");
   int32_t person2_age = *(int32_t*)json_get(person2, "age");
 

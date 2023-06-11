@@ -1,3 +1,6 @@
+#ifndef JSON_SETTERS_H
+#define JSON_SETTERS_H
+
 bool
 json_set_int32(
   const struct json_t* const json,
@@ -38,3 +41,5 @@ bool
 json_set_null(
   const struct json_t* const json,
   const char* const key);
+
+#endif

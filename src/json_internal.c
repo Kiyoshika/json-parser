@@ -490,7 +490,7 @@ _json_parse_array(
       case JSON_STRING:
       {
         char* value = strdup(item_string);
-        if (!json_array_append(array, type, &value))
+        if (!json_array_append(array, type, value))
           goto cleanup;
         break;
       }
@@ -511,8 +511,7 @@ _json_parse_array(
 
       case JSON_NULL:
       {
-        bool value = true;
-        if (!json_array_append(array, type, &value))
+        if (!json_array_append_null(array))
           goto cleanup;
         break;
       }
@@ -917,4 +916,98 @@ _json_perform_token_action(
   }
 
   return true;
+}
+
+void
+_json_set_item_value(
+  struct json_item_t* item,
+  const enum json_type_e type,
+  void* value)
+{
+  switch (type)
+  {
+    case JSON_INT32:
+      item->value.int32 = *(int32_t*)value;
+      break;
+    case JSON_DECIMAL:
+      item->value.decimal = *(double*)value;
+      break;
+    case JSON_STRING:
+      item->value.str = value; // this is a heap copy
+      break;
+    case JSON_OBJECT:
+      item->value.object = value; // this is a heap copy
+      break;
+    case JSON_ARRAY:
+     item->value.array = value; // this is a heap copy
+     break;
+    case JSON_BOOL:
+      item->value.boolean = *(bool*)value;
+      break;
+    case JSON_NULL:
+      item->value.is_null = *(bool*)value;
+    case JSON_NOTYPE:
+      break;
+  }
+}
+
+void*
+_json_get_item_value(
+  struct json_item_t* const item)
+{
+  switch (item->type)
+  {
+    case JSON_INT32:
+      return &item->value.int32;
+      break;
+    case JSON_DECIMAL:
+      return &item->value.decimal;
+      break;
+    case JSON_STRING:
+      return item->value.str;
+      break;
+    case JSON_OBJECT:
+      return item->value.object;
+      break;
+    case JSON_ARRAY:
+     return item->value.array;
+     break;
+    case JSON_BOOL:
+      return &item->value.boolean;
+      break;
+    case JSON_NULL:
+      return &item->value.is_null;
+    case JSON_NOTYPE:
+      return NULL;
+  }
+
+  return NULL;
+}
+
+void
+_json_deallocate_item(
+  struct json_item_t* item)
+{
+  switch (item->type)
+  {
+    case JSON_OBJECT:
+      json_free(&item->value.object);
+      break;
+    case JSON_ARRAY:
+      json_array_free(&item->value.array);
+      break;
+    case JSON_STRING:
+    {
+      char* str = item->value.str;
+      free(str);
+      break;
+    }
+    // no-ops
+    case JSON_INT32:
+    case JSON_DECIMAL:
+    case JSON_BOOL:
+    case JSON_NULL:
+    case JSON_NOTYPE:
+      break;
+  }
 }

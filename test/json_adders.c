@@ -1,4 +1,5 @@
 #include "json.h"
+#include "json_array.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -97,21 +98,21 @@ int main()
   }
 
   struct json_array_t* arr_get = json_get_array(json, "key5");
-  int32_t arr_val = *(int32_t*)json_array_get_fixed(arr_get, 0, JSON_INT32);
+  int32_t arr_val = *(int32_t*)json_array_get(arr_get, 0);
   if (arr_val != 1)
   {
     fprintf(stderr, "Incorrect value for key5[0].\n");
     goto cleanup;
   }
 
-  arr_val = *(int32_t*)json_array_get_fixed(arr_get, 1, JSON_INT32);
+  arr_val = *(int32_t*)json_array_get(arr_get, 1);
   if (arr_val != 2)
   {
     fprintf(stderr, "Incorrect value for key5[1].\n");
     goto cleanup;
   }
 
-  arr_val = *(int32_t*)json_array_get_fixed(arr_get, 2, JSON_INT32);
+  arr_val = *(int32_t*)json_array_get(arr_get, 2);
   if (arr_val != 3)
   {
     fprintf(stderr, "Incorrect value for key5[2].\n");

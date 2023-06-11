@@ -22,8 +22,6 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * writing to file
 * Writing JSON object to string (deserialization)
 * (experimental) parsing directly into a struct
-* Array iterators
-* "safer" parsing from string (like `strncpy` instead of `strcpy`)
 * Setting array values to different types
   * Currently you can only modify arrays using the pointers from `json_array_get_...()`
 
@@ -199,18 +197,16 @@ if (!json)
 // this array contains two arrays that we can fetch
 struct json_array_t* array = json_get(json, "key");
 
-// get_fixed means we are accessing an array where each
-// element is the same type (i.e., "fixed" type).
-// 
-// see next example for dealing with mixed-type arrays
-struct json_array_t* int_arr = json_array_get_fixed(array, 0, JSON_ARRAY);
-struct json_array_t* str_arr = json_array_get_fixed(array, 1, JSON_ARRAY);
+// the type at an array index is known internally and
+// assumes the caller knows the type ahead of time
+struct json_array_t* int_arr = json_array_get(array, 0);
+struct json_array_t* str_arr = json_array_get(array, 1);
 
-int32_t one = *(int32_t*)json_array_get_fixed(int_arr, 0, JSON_INT32);
+int32_t one = *(int32_t*)json_array_get(int_arr, 0);
 
 // strings are stored in arrays differently than in regular JSON objects,
 // so we must cast and dereference (since the array returns the address)
-char* a = *(char**)json_array_get_fixed(str_arr, 0, JSON_STRING);
+char* a = json_array_get(str_arr, 0);
 
 json_free(&json);
 ```
@@ -233,9 +229,9 @@ struct json_array_t* array = json_get(json, "key");
 // appropriate offset to fetch the correct item.
 // this is slower than get_fixed because this loop is ran every time
 // we call get()
-int32_t value1 = *(int32_t*)json_array_get_mixed(array, 0);
-double value2 = *(double*)json_array_get_mixed(array, 1);
-char* valu3 = *(char**)json_array_get_mixed(array, 2);
+int32_t value1 = *(int32_t*)json_array_get(array, 0);
+double value2 = *(double*)json_array_get(array, 1);
+char* valu3 = json_array_get(array, 2);
 
 json_free(&json);
 ```

@@ -47,7 +47,6 @@ struct json_t
   size_t capacity;
 };
 
-#include "json_array.h"
 #include "json_getters.h"
 #include "json_setters.h"
 

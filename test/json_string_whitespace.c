@@ -36,14 +36,14 @@ int main()
   }
 
   struct json_array_t* arr = json_get(json, "arr");
-  char* value3 = *(char**)json_array_get_fixed(arr, 0, JSON_STRING);
+  char* value3 = json_array_get(arr, 0);
   if (strcmp(value3, "val1") != 0)
   {
     fprintf(stderr, "Expected value 'val1' but got '%s'.\n", value3);
     goto cleanup;
   }
 
-  char* value4 = *(char**)json_array_get_fixed(arr, 1, JSON_STRING);
+  char* value4 = json_array_get(arr, 1);
   if (strcmp(value4, "val2") != 0)
   {
     fprintf(stderr, "Expected value 'val2' but got '%s'.\n", value4);

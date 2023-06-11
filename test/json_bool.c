@@ -59,21 +59,21 @@ int main()
   }
 
   struct json_array_t* bool_arr = json_get(json_4, "key");
-  bool arr_val1 = *(bool*)json_array_get_fixed(bool_arr, 0, JSON_BOOL);
+  bool arr_val1 = *(bool*)json_array_get(bool_arr, 0);
   if (arr_val1 != true)
   {
     fprintf(stderr, "Expected arr_val1 to be true but got false.\n");
     goto cleanup;
   }
 
-  bool arr_val2 = *(bool*)json_array_get_fixed(bool_arr, 1, JSON_BOOL);
+  bool arr_val2 = *(bool*)json_array_get(bool_arr, 1);
   if (arr_val2 != false)
   {
     fprintf(stderr, "Expected arr_val2 to be false but got true.\n");
     goto cleanup;
   }
 
-  bool arr_val3 = *(bool*)json_array_get_fixed(bool_arr, 2, JSON_BOOL);
+  bool arr_val3 = *(bool*)json_array_get(bool_arr, 2);
   if (arr_val3 != true)
   {
     fprintf(stderr, "Expected arr_val3 to be true but got false.\n");
