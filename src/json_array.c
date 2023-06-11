@@ -83,7 +83,53 @@ json_array_append(
   return _json_array_append_item(array, item_type, value);
 }
 
+bool
+json_array_append_int32(
+  struct json_array_t* array,
+  int32_t value)
+{
+  return _json_array_append_item(array, JSON_INT32, &value);
+}
 
+bool
+json_array_append_decimal(
+  struct json_array_t* array,
+  double value)
+{
+  return _json_array_append_item(array, JSON_DECIMAL, &value);
+}
+
+bool 
+json_array_append_bool(
+  struct json_array_t* array,
+  bool value)
+{
+  return _json_array_append_item(array, JSON_BOOL, &value);
+}
+
+bool
+json_array_append_string(
+  struct json_array_t* array,
+  char* value)
+{
+  return _json_array_append_item(array, JSON_STRING, value);
+}
+
+bool
+json_array_append_object(
+  struct json_array_t* array,
+  struct json_t* value)
+{
+  return _json_array_append_item(array, JSON_OBJECT, value);
+}
+
+bool
+json_array_append_array(
+  struct json_array_t* array,
+  struct json_array_t* value)
+{
+  return _json_array_append_item(array, JSON_ARRAY, value);
+}
 
 void
 json_array_free(
