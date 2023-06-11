@@ -49,9 +49,7 @@ json_set_string(
   struct json_item_t* item = &json->items[idx];
   _json_deallocate_item(item);
   item->type = JSON_STRING;
-  item->value.str = strdup(value);
-  if (!item->value.str)
-    return false;
+  item->value.str = value;
   return true;
 }
 

@@ -14,6 +14,9 @@ struct json_array_t
   size_t item_capacity;
 };
 
+#include "json_array_getters.h"
+#include "json_array_setters.h"
+
 struct json_array_t*
 json_array_create();
 
@@ -26,18 +29,6 @@ json_array_append(
 bool
 json_array_append_null(
   struct json_array_t* array);
-
-void*
-json_array_get(
-  const struct json_array_t* const array,
-  const size_t idx);
-
-void
-json_array_set(
-  struct json_array_t* const array,
-  const size_t idx,
-  const enum json_type_e type,
-  void* value);
 
 void
 json_array_free(
