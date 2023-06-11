@@ -1,4 +1,4 @@
-#include "json.h"
+//#include "json.h"
 #include "json_array.h"
 #include "json_internal.h"
 
@@ -34,7 +34,7 @@ static bool
 _json_array_append_item(
   struct json_array_t* array,
   const enum json_type_e type,
-  void* item)
+  void* value)
 {
   array->item_types[array->n_items] = type;
   if (array->n_items + 1 == array->item_capacity)
@@ -54,7 +54,7 @@ _json_array_append_item(
 
   struct json_item_t* current_item = &array->items[array->n_items];
   current_item->type = type;
-  _json_set_item_value(current_item, type, item); 
+  _json_set_item_value(current_item, value); 
 
   array->n_items++;
   return true;
@@ -72,7 +72,7 @@ bool
 json_array_append(
   struct json_array_t* array,
   enum json_type_e item_type,
-  void* item)
+  void* value)
 {
   // need to handle this special case properly.
   // this is to prevent the user doing something wierd like
@@ -80,7 +80,7 @@ json_array_append(
   if (item_type == JSON_NULL)
     return json_array_append_null(array);
 
-  return _json_array_append_item(array, item_type, item);
+  return _json_array_append_item(array, item_type, value);
 }
 
 void*
@@ -89,6 +89,19 @@ json_array_get(
   const size_t idx)
 {
   return _json_get_item_value(&array->items[idx]);
+}
+
+void
+json_array_set(
+  struct json_array_t* const array,
+  const size_t idx,
+  const enum json_type_e type,
+  void* value)
+{
+  struct json_item_t* current_item = &array->items[idx];
+  _json_deallocate_item(current_item);
+  current_item->type = type;
+  _json_set_item_value(current_item, value);
 }
 
 void

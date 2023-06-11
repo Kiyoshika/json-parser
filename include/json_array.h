@@ -1,6 +1,8 @@
 #ifndef JSON_ARRAY_H
 #define JSON_ARRAY_H
 
+#include "json.h"
+
 // forward declaration
 struct json_item_t;
 
@@ -19,7 +21,7 @@ bool
 json_array_append(
   struct json_array_t* array,
   const enum json_type_e item_type,
-  void* item);
+  void* value);
 
 bool
 json_array_append_null(
@@ -29,6 +31,13 @@ void*
 json_array_get(
   const struct json_array_t* const array,
   const size_t idx);
+
+void
+json_array_set(
+  struct json_array_t* const array,
+  const size_t idx,
+  const enum json_type_e type,
+  void* value);
 
 void
 json_array_free(
