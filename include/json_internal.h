@@ -153,4 +153,25 @@ void
 _json_deallocate_item(
   struct json_item_t* item);
 
+bool 
+_json_resize_string(
+  char** to_string,
+  size_t* capacity);
+
+bool
+_json_write_value_buffer_to_string(
+  char* formatted_buffer,
+  char** to_string,
+  size_t* to_string_len,
+  size_t* to_string_capacity);
+
+bool 
+_json_value_to_string(
+  char* formatted_buffer,
+  size_t max_buffer_len,
+  const struct json_item_t* const item,
+  char** to_string,
+  size_t* to_string_len,
+  size_t* to_string_capacity);
+
 #endif

@@ -374,3 +374,59 @@ json_type_to_size(
 
   return 0;
 }
+
+char*
+json_to_string(
+  const struct json_t* const json)
+{
+  size_t len = 0;
+  size_t capacity = 100;
+
+  char* to_string = calloc(capacity, sizeof(char));
+  if (!to_string)
+    return NULL;
+
+  strncat(to_string, "{", 2);
+  len = 1;
+
+  for (size_t i = 0; i < json->n_items; ++i)
+  {
+    // +3 for wrapper quotes and colon
+    if (len + json->items[i].key_len + 3 >= capacity
+        && !_json_resize_string(&to_string, &capacity))
+      goto failure;
+    
+    // write "key_name": (space)
+    strncat(to_string, "\"", 2);
+    strncat(to_string, json->items[i].key, json->items[i].key_len);
+    strncat(to_string, "\":", 3);
+    len += json->items[i].key_len + 3;
+
+    // 256 is a little overkill but shouldn't be a noticeable problem
+    char formatted_buffer[256] = {0};
+    if (!_json_value_to_string(
+          formatted_buffer,
+          256,
+          &json->items[i],
+          &to_string,
+          &len,
+          &capacity))
+      goto failure;
+    
+    // add comma
+    if (i < json->n_items - 1
+        && !_json_write_value_buffer_to_string(",", &to_string, &len, &capacity))
+      goto failure;
+
+    }
+
+  // write closing body with null terminator
+  if (!_json_write_value_buffer_to_string("}", &to_string, &len, &capacity))
+    goto failure;
+
+  return to_string;
+
+failure:
+  free(to_string);
+  return NULL;
+}
