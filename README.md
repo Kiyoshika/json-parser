@@ -38,7 +38,7 @@ If you wish to build separately, first clone the repo and enter the root directo
 Now, in your new project's CMakeLists.txt you can use
 
 ```cmake
-find_package(json REQUIRED 0.1.0) # or whatever version you're targeting
+find_package(json 0.1.0 REQUIRED EXACT) # or whatever version you're targeting
 
 add_executable(myexe myexe.c)
 target_link_libraries(myexe json)
@@ -47,8 +47,8 @@ target_link_libraries(myexe json)
 Now you should be able to use the following headers and build your project as normal.
 
 ```c
-#include <json.h>
-#include <json_array.h>
+#include <json/json.h>
+#include <json/json_array.h>
 
 // ...
 ```
