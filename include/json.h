@@ -126,4 +126,9 @@ char*
 json_to_string(
   const struct json_t* const json);
 
+bool
+json_to_file(
+  const struct json_t* const json,
+  const char* const filepath);
+
 #endif

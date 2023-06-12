@@ -430,3 +430,29 @@ failure:
   free(to_string);
   return NULL;
 }
+
+bool
+json_to_file(
+  const struct json_t* const json,
+  const char* const filepath)
+{
+  char* json_string = json_to_string(json);
+  if (!json_string)
+    return false;
+  size_t len = strlen(json_string);
+
+  FILE* to_file = fopen(filepath, "w+");
+  if (!to_file)
+    return false;
+
+  if (fwrite(json_string, sizeof(char), len, to_file) < len)
+  {
+    free(json_string);
+    fclose(to_file);
+    return false;
+  }
+
+  free(json_string);
+  fclose(to_file);
+  return true;
+}

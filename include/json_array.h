@@ -68,4 +68,9 @@ char*
 json_array_to_string(
   const struct json_array_t* const array);
 
+bool
+json_array_to_fiile(
+  const struct json_array_t* const array,
+  const char* const filepath);
+
 #endif
