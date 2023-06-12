@@ -14,10 +14,10 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * Parsing from raw string
 * Parsing from a file
 * Modifying objects and arrays
+* Writing JSON object and array to string
 
 ### Upcoming features:
 * writing to file
-* Writing JSON object to string (deserialization)
 * (experimental) parsing directly into a struct
 
 ### Known issues:
@@ -43,6 +43,7 @@ All keys in JSON are stack-allocated. This is controlled via `define JSON_MAX_KE
 * IO:
   * [Parsing from Raw String](#parsing-from-raw-string)
   * [Parsing from File](#parsing-from-file)
+  * [Writing to String](#writing-to-string)
 * Usage:
   * [Updating Objects](#updating-objects)
   * [Handling Null Values](#handling-null-values)
@@ -126,6 +127,22 @@ if (!json)
 {
   // handle error ...
 }
+```
+
+### Writing to String
+This library supports writing both an object or an array to a string.
+```c
+#include "json.h"
+#include "json_array.h"
+
+// ...
+
+// assume we get these from somewhere/create them...
+struct json_t* json = ...;
+char* json_string = json_to_string(json);
+
+struct json_array_t* array = ...;
+char* array_string = json_array_to_string(array);
 ```
 
 ## Usage
