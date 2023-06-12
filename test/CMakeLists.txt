@@ -142,3 +142,8 @@ add_executable(json_to_file json_to_file.c)
 target_include_directories(json_to_file PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_to_file json)
 add_test(NAME json_to_file COMMAND json_to_file)
+
+add_executable(json_array_to_and_from_file json_array_to_and_from_file.c)
+target_include_directories(json_array_to_and_from_file PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_array_to_and_from_file json)
+add_test(NAME json_array_to_and_from_file COMMAND json_array_to_and_from_file)

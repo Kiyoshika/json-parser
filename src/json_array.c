@@ -1,5 +1,6 @@
 //#include "json.h"
 #include "json_array.h"
+#include "json_array_adders.h"
 #include "json_internal.h"
 
 struct json_array_t*
@@ -28,107 +29,6 @@ json_array_create()
   }
 
   return array;
-}
-
-static bool
-_json_array_append_item(
-  struct json_array_t* array,
-  const enum json_type_e type,
-  void* value)
-{
-  array->item_types[array->n_items] = type;
-  if (array->n_items + 1 == array->item_capacity)
-  {
-    size_t new_item_capacity = array->item_capacity * 2;
-    void* alloc = realloc(array->item_types, new_item_capacity * sizeof(*array->item_types));
-    if (!alloc)
-      return false;
-    array->item_capacity = new_item_capacity;
-    array->item_types = alloc;
-
-    void* alloc2 = realloc(array->items, new_item_capacity * sizeof(*array->items));
-    if (!alloc2)
-      return false;
-    array->items = alloc;
-  }
-
-  struct json_item_t* current_item = &array->items[array->n_items];
-  current_item->type = type;
-  _json_set_item_value(current_item, value); 
-
-  array->n_items++;
-  return true;
-}
-
-bool
-json_array_append_null(
-  struct json_array_t* array)
-{
-  bool value = true;
-  return _json_array_append_item(array, JSON_NULL, &value);
-}
-
-bool
-json_array_append(
-  struct json_array_t* array,
-  enum json_type_e item_type,
-  void* value)
-{
-  // need to handle this special case properly.
-  // this is to prevent the user doing something wierd like
-  // json_array_append(array, JSON_NULL, false)
-  if (item_type == JSON_NULL)
-    return json_array_append_null(array);
-
-  return _json_array_append_item(array, item_type, value);
-}
-
-bool
-json_array_append_int32(
-  struct json_array_t* array,
-  int32_t value)
-{
-  return _json_array_append_item(array, JSON_INT32, &value);
-}
-
-bool
-json_array_append_decimal(
-  struct json_array_t* array,
-  double value)
-{
-  return _json_array_append_item(array, JSON_DECIMAL, &value);
-}
-
-bool 
-json_array_append_bool(
-  struct json_array_t* array,
-  bool value)
-{
-  return _json_array_append_item(array, JSON_BOOL, &value);
-}
-
-bool
-json_array_append_string(
-  struct json_array_t* array,
-  char* value)
-{
-  return _json_array_append_item(array, JSON_STRING, value);
-}
-
-bool
-json_array_append_object(
-  struct json_array_t* array,
-  struct json_t* value)
-{
-  return _json_array_append_item(array, JSON_OBJECT, value);
-}
-
-bool
-json_array_append_array(
-  struct json_array_t* array,
-  struct json_array_t* value)
-{
-  return _json_array_append_item(array, JSON_ARRAY, value);
 }
 
 void
@@ -217,4 +117,209 @@ json_array_to_file(
   free(array_string);
   fclose(to_file);
   return true;
+}
+
+struct json_array_t*
+json_parse_array_from_string(
+  const char* const array_string)
+{
+  size_t len = strlen(array_string);
+
+  struct json_array_t* array = json_array_create();
+  if (!array)
+    return NULL;
+
+  char* endptr = NULL; // used for string to numeric conversions (can't declare inside switch)
+  char* item_string = NULL;
+
+  // starting at 1 to skip open bracket [
+  // going to len - 1 (exclusive) to ignore closing bracket ]
+  for (size_t i = 1; i < len - 1; ++i)
+  {
+    bool contains_decimal = false;
+    item_string = _json_fetch_array_item_string(array_string, &i, &contains_decimal);
+
+    if (!item_string)
+      goto cleanup;
+
+    enum json_type_e type = _json_get_item_type(item_string);
+
+    switch (type)
+    {
+      case JSON_INT32:
+      {
+        if (!contains_decimal)
+        {
+          int32_t value = strtol(item_string, &endptr, 10);
+          if (!json_array_append(array, type, &value))
+            goto cleanup;
+          break;
+        }
+
+        // not doing a fallthrough to avoid compiler warning, so using goto instead
+        if (contains_decimal)
+        {
+          type = JSON_DECIMAL;
+          goto decimal;
+        }
+
+        break;
+      }
+
+      decimal:
+      case JSON_DECIMAL:
+      {
+        double value = strtod(item_string, &endptr);
+        if (!json_array_append(array, type, &value))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_STRING:
+      {
+        char* value = strdup(item_string);
+        if (!json_array_append(array, type, value))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_BOOL:
+      {
+        // bool must be "true" or "false" all lowercase
+        bool value = false;
+        if (strcmp(item_string, "true") == 0)
+          value = true;
+        else if (strcmp(item_string, "false") != 0)
+          goto cleanup;
+
+        if (!json_array_append(array, type, &value))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_NULL:
+      {
+        if (!json_array_append_null(array))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_OBJECT:
+      {
+        struct json_t* object = json_parse_from_string(item_string);
+        if (!object)
+          goto cleanup;
+        if (!json_array_append(array, type, object))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_ARRAY:
+      {
+        struct json_array_t* new_array = json_parse_array_from_string(item_string);
+        if (!new_array)
+          goto cleanup;
+        if (!json_array_append(array, type, new_array))
+          goto cleanup;
+        break;
+      }
+
+      case JSON_NOTYPE:
+        goto cleanup;
+    }
+
+    free(item_string);
+  }
+
+  goto createandreturn;
+
+cleanup:
+  free(item_string);
+  json_array_free(&array);
+  return NULL;
+
+createandreturn:
+  return array;
+}
+
+struct json_array_t*
+json_parse_array_from_string_with_length(
+  const char* const array_string,
+  const size_t len)
+{
+  // read at most len characters
+  // if we find \0 then we can terminate early
+  size_t capacity = 100;
+  char* new_str = calloc(capacity, sizeof(char));
+  if (!new_str)
+    return NULL;
+
+  size_t i = 0;
+  for (; i < len; ++i)
+  {
+    new_str[i] = array_string[i];
+    if (array_string[i] == '\0')
+      break;
+    if (i + 1 == capacity)
+    {
+      size_t new_capacity = capacity * 2;
+      // redundant multiplication but explicit
+      void* alloc = realloc(new_str, new_capacity * sizeof(char));
+      if (!alloc)
+      {
+        free(new_str);
+        return NULL;
+      }
+      capacity = new_capacity;
+      new_str = alloc;
+    }
+  }
+
+  // if no terminator was found, append one to the end
+  if (i == len)
+    new_str[i] = '\0';
+
+
+  struct json_array_t* array = json_parse_array_from_string(new_str);
+  free(new_str);
+
+  return array;
+}
+
+struct json_array_t*
+json_parse_array_from_file(
+  const char* const filepath)
+{
+  FILE* json_file = fopen(filepath, "r");
+  if (!json_file)
+    return NULL;
+
+  rewind(json_file);
+  if (fseek(json_file, 0, SEEK_END) == -1)
+    goto failure;
+
+  int size = ftell(json_file);
+  
+  rewind(json_file);
+
+  char* file_string = calloc(size, sizeof(char));
+  if (!file_string)
+    goto failure;
+
+  if (fread(file_string, sizeof(char), size, json_file) < size)
+  {
+    free(file_string);
+    goto failure;
+  }
+
+  fclose(json_file);
+
+  struct json_array_t* array = json_parse_array_from_string_with_length(file_string, size);
+  free(file_string);
+
+  return array;
+
+failure:
+  fclose(json_file);
+  return NULL;
 }

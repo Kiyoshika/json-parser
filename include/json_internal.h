@@ -109,10 +109,6 @@ enum json_type_e
 _json_get_item_type(
   const char* const item_string);
 
-struct json_array_t*
-_json_parse_array(
-  const char* const array_string);
-
 bool
 _json_check_key_exists(
   const struct json_t* const json,

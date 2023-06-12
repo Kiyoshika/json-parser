@@ -431,129 +431,6 @@ _json_get_item_type(
   return JSON_STRING;
 }
 
-struct json_array_t*
-_json_parse_array(
-  const char* const array_string)
-{
-  size_t len = strlen(array_string);
-
-  struct json_array_t* array = json_array_create();
-  if (!array)
-    return NULL;
-
-  char* endptr = NULL; // used for string to numeric conversions (can't declare inside switch)
-  char* item_string = NULL;
-
-  // starting at 1 to skip open bracket [
-  // going to len - 1 (exclusive) to ignore closing bracket ]
-  for (size_t i = 1; i < len - 1; ++i)
-  {
-    bool contains_decimal = false;
-    item_string = _json_fetch_array_item_string(array_string, &i, &contains_decimal);
-
-    if (!item_string)
-      goto cleanup;
-
-    enum json_type_e type = _json_get_item_type(item_string);
-
-    switch (type)
-    {
-      case JSON_INT32:
-      {
-        if (!contains_decimal)
-        {
-          int32_t value = strtol(item_string, &endptr, 10);
-          if (!json_array_append(array, type, &value))
-            goto cleanup;
-          break;
-        }
-
-        // not doing a fallthrough to avoid compiler warning, so using goto instead
-        if (contains_decimal)
-        {
-          type = JSON_DECIMAL;
-          goto decimal;
-        }
-
-        break;
-      }
-
-      decimal:
-      case JSON_DECIMAL:
-      {
-        double value = strtod(item_string, &endptr);
-        if (!json_array_append(array, type, &value))
-          goto cleanup;
-        break;
-      }
-
-      case JSON_STRING:
-      {
-        char* value = strdup(item_string);
-        if (!json_array_append(array, type, value))
-          goto cleanup;
-        break;
-      }
-
-      case JSON_BOOL:
-      {
-        // bool must be "true" or "false" all lowercase
-        bool value = false;
-        if (strcmp(item_string, "true") == 0)
-          value = true;
-        else if (strcmp(item_string, "false") != 0)
-          goto cleanup;
-
-        if (!json_array_append(array, type, &value))
-          goto cleanup;
-        break;
-      }
-
-      case JSON_NULL:
-      {
-        if (!json_array_append_null(array))
-          goto cleanup;
-        break;
-      }
-
-      case JSON_OBJECT:
-      {
-        struct json_t* object = json_parse_from_string(item_string);
-        if (!object)
-          goto cleanup;
-        if (!json_array_append(array, type, object))
-          goto cleanup;
-        break;
-      }
-
-      case JSON_ARRAY:
-      {
-        struct json_array_t* new_array = _json_parse_array(item_string);
-        if (!new_array)
-          goto cleanup;
-        if (!json_array_append(array, type, new_array))
-          goto cleanup;
-        break;
-      }
-
-      case JSON_NOTYPE:
-        goto cleanup;
-    }
-
-    free(item_string);
-  }
-
-  goto createandreturn;
-
-cleanup:
-  free(item_string);
-  json_array_free(&array);
-  return NULL;
-
-createandreturn:
-  return array;
-}
-
 bool
 _json_check_key_exists(
   const struct json_t* const json,
@@ -623,7 +500,7 @@ _json_add_item(
       if (!array_string)
         return false;
 
-      struct json_array_t* json_array = _json_parse_array(array_string);
+      struct json_array_t* json_array = json_parse_array_from_string(array_string);
       if (!json_array)
       {
         free(array_string);

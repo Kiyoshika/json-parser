@@ -40,7 +40,7 @@ bool
 json_set_string(
   const struct json_t* const json,
   const char* const key,
-  const char* const value)
+  char* value)
 {
   bool key_exists = false;
   size_t idx = _json_get_key_index(json, key, &key_exists);
