@@ -32,7 +32,7 @@ Both methods work and are up to your preference, but here I'll quickly guide thr
 ### Building Separately
 If you wish to build separately, first clone the repo and enter the root directory. Then use:
 * `mkdir build && cd build`
-* `cmake -DDEBUG_MODE=OFF -DCOMPILE_TESTS=OFF ..` - of course, you can change these flags if you want to run tests or hack at the library
+* `cmake -DDEBUG_MODE=OFF -DCOMPILE_TESTS=OFF ..` - of course, you can change these flags if you want to run tests (`make test`) or hack at the library
 * `sudo make install` - this will build the library and add the static lib, headers and config to the global install directory
 
 Now, in your new project's CMakeLists.txt you can use
