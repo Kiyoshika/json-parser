@@ -5,9 +5,9 @@
 int main()
 {
   // to_string does not add any spaces or newlines, so we will match the format
-  // to make it easier to compare
-  // TODO: add array here
-  char* json_string = "{\"key\":1,\"key2\":3.141590,\"key3\":true,\"key4\":null,\"key5\":{\"a\":1,\"b\":2},\"key6\":\"hello there\"}";
+  // to make it easier to compare.
+  // trying a bunch of stuff such as nested objects, nested arrays with objects and mixed types etc.
+  char* json_string = "{\"key\":1,\"key2\":3.141590,\"key3\":true,\"key4\":null,\"key5\":{\"a\":1,\"b\":2},\"key6\":\"hello there\",\"key7\":[1,true,null,\"hey\",[1,2,3,{\"a\":1,\"b\":2,\"c\":{\"a\":3,\"b\":4}}]]}";
   struct json_t* json = json_parse_from_string(json_string);
   if (!json)
   {

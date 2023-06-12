@@ -148,3 +148,47 @@ json_array_free(
   *array = NULL;
 
 }
+
+char*
+json_array_to_string(
+  const struct json_array_t* const array)
+{
+  size_t len = 0;
+  size_t capacity = 100;
+
+  char* to_string = calloc(capacity, sizeof(char));
+  if (!to_string)
+    return NULL;
+
+  strncat(to_string, "[", 2);
+  len = 1;
+
+  for (size_t i = 0; i < array->n_items; ++i)
+  {
+    // 256 is a little overkill but shouldn't be a noticeable problem
+    char formatted_buffer[256] = {0};
+    if (!_json_value_to_string(
+          formatted_buffer,
+          256,
+          &array->items[i],
+          &to_string,
+          &len,
+          &capacity))
+      goto failure;
+
+    // add comma
+    if (i < array->n_items - 1
+        && !_json_write_value_buffer_to_string(",", &to_string, &len, &capacity))
+      goto failure;
+  }
+
+  // write closing bracket with null terminator
+  if (!_json_write_value_buffer_to_string("]", &to_string, &len, &capacity))
+    goto failure;
+
+  return to_string;
+
+failure:
+  free(to_string);
+  return NULL;
+}

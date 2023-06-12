@@ -64,4 +64,8 @@ void
 json_array_free(
   struct json_array_t** array);
 
+char*
+json_array_to_string(
+  const struct json_array_t* const array);
+
 #endif
