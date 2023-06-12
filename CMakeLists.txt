@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10.0)
 
-project(json LANGUAGES C VERSION 0.1.0)
+set(JSON_VERSION 0.1.0)
+project(json LANGUAGES C VERSION ${JSON_VERSION})
 
 set(CMAKE_C_STANDARD 99)
 
@@ -30,3 +31,8 @@ endif()
 
 unset(DEBUG_MODE)
 unset(COMPILE_TESTS)
+
+file(GLOB JSONHEADERS include/*.h)
+install(TARGETS json DESTINATION lib)
+install(FILES ${JSONHEADERS}  DESTINATION include)
+install(FILES jsonConfig.cmake DESTINATION lib/cmake/json)
