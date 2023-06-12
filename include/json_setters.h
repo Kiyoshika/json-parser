@@ -17,7 +17,7 @@ bool
 json_set_string(
   const struct json_t* const json,
   const char* const key,
-  const char* const value);
+  char* value);
 
 bool
 json_set_object(

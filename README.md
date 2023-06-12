@@ -14,10 +14,9 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 * Parsing from raw string
 * Parsing from a file
 * Modifying objects and arrays
-* Writing JSON object and array to string
+* Writing JSON object and array to string or file
 
 ### Upcoming features:
-* writing to file
 * (experimental) parsing directly into a struct
 
 ### Known issues:
@@ -80,10 +79,12 @@ Any heap-allocated item you pass to JSON (via setter or append), the ownership i
 ### Parsing from Raw String
 This is an example of parsing the most basic form of JSON.
 
-There are two primary ways to read JSON from strings:
+There are two primary ways to read JSON objects or arrays from strings:
 * `json_parse_from_string`
+* `json_parse_array_from_string`
   * ONLY use this if you guaranteed to have a null terminator, otherwise this is unsafe
 * `json_parse_from_string_with_length`
+* `json_parse_array_from_string_with_length`
   * A safer alternative that reads at most some specified number of bytes and appends a null terminator if one wasn't found
 
 Both methods will be shown below
@@ -125,6 +126,14 @@ Under the hood this calls `json_parse_from_string_with_length` where the length 
 
 struct json_t* json = json_parse_from_file("myjson.json");
 if (!json)
+{
+  // handle error ...
+}
+
+// you can also read arrays from a file
+// e.g., [{...}, {...}, {...}, ...]
+struct json_array_t* array = json_parse_array_from_file("myjson_array.json");
+if (!array)
 {
   // handle error ...
 }
