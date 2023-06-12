@@ -46,7 +46,7 @@ write_basic_package_version_file(
   COMPATIBILITY SameMajorVersion)
 
 file(GLOB JSONHEADERS include/*.h)
-install(TARGETS json DESTINATION ${CMAKE_INSTALL_LIBDIR}/json)
+install(TARGETS json DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ${JSONHEADERS}  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/json)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/jsonConfig.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/json)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/jsonConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/json)
