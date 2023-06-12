@@ -22,6 +22,62 @@ If you notice a bug (that's not alreay mentioned in the issues) please report it
 ### Known issues:
 * Escaped quotes and other special characters *may* break keys/values
 
+## Building and Including in Other Projects
+There are two main ways to add this to your project:
+1. Build separately and use `find_package`
+2. Use a git submodule and add it to your build
+
+Both methods work and are up to your preference, but here I'll quickly guide through both ways.
+
+### Building Separately
+If you wish to build separately, first clone the repo and enter the root directory. Then use:
+* `cmake -DDEBUG_MODE=OFF -DCOMPILE_TESTS=OFF ..` - of course, you can change these flags if you want to run tests or hack at the library
+* `sudo make install` - this will build the library and add the static lib, headers and config to the global install directory
+
+Now, in your new project's CMakeLists.txt you can use
+
+```cmake
+find_package(json REQUIRED 0.1.0) # or whatever version you're targeting
+
+add_executable(myexe myexe.c)
+target_link_libraries(myexe json)
+```
+
+Now you should be able to use the following headers and build your project as normal.
+
+```c
+#include <json.h>
+#include <json_array.h>
+
+// ...
+```
+
+### Including into Your Build
+If you'd rather include the library as part of your build, create a new folder such as `ext/` in your project's directory.
+
+Now you can add this project as a submodule, `git submodule add [repo link]` (NOTE: it's recommended to use one of the version branches instead of master as master may be less stable)
+
+Then in your project's CMakeLists.txt, you can add something like:
+
+```cmake
+# build libjson first
+add_subdirectory(ext/json-parser)
+
+
+add_executable(myexe myexe.c)
+target_include_directories(myexe PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(myexe json)
+```
+
+Now you should be able to use the headers:
+
+```c
+#include "json.h"
+#include "json_array.h"
+
+// ...
+```
+
 # Examples
 Note that the examples below don't cover everything in the API; it's encouraged to peek at the [headers](include/) for a more complete API reference.
 
