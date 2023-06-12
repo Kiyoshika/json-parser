@@ -137,3 +137,8 @@ add_executable(json_to_string json_to_string.c)
 target_include_directories(json_to_string PUBLIC ${json_SOURCE_DIR}/include)
 target_link_libraries(json_to_string json)
 add_test(NAME json_to_string COMMAND json_to_string)
+
+add_executable(json_to_file json_to_file.c)
+target_include_directories(json_to_file PUBLIC ${json_SOURCE_DIR}/include)
+target_link_libraries(json_to_file json)
+add_test(NAME json_to_file COMMAND json_to_file)

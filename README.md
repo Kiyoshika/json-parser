@@ -44,6 +44,7 @@ All keys in JSON are stack-allocated. This is controlled via `define JSON_MAX_KE
   * [Parsing from Raw String](#parsing-from-raw-string)
   * [Parsing from File](#parsing-from-file)
   * [Writing to String](#writing-to-string)
+  * [Writing to File](#writing-to-file)
 * Usage:
   * [Updating Objects](#updating-objects)
   * [Handling Null Values](#handling-null-values)
@@ -140,9 +141,42 @@ This library supports writing both an object or an array to a string.
 // assume we get these from somewhere/create them...
 struct json_t* json = ...;
 char* json_string = json_to_string(json);
+if (!json_string)
+{
+  // handle error ...
+}
 
 struct json_array_t* array = ...;
 char* array_string = json_array_to_string(array);
+if (!array_string)
+{
+  // handle error ...
+}
+```
+
+### Writing to File
+Like writing to string, we can also write to a file.
+
+This really just calls the `...to_string` function under the hood and handles the file business for you.
+
+```c
+#include "json.h"
+#include "json_array.h"
+
+// ...
+
+// assume we get these from somewhere/create them...
+struct json_t* json = ...;
+if (!json_to_file(json, "test.json"))
+{
+  // handle error ...
+}
+
+struct json_array_t* array = ...;
+if (!json_array_to_file(array, "test_array.json"))
+{
+  // handle error ...
+}
 ```
 
 ## Usage
@@ -257,6 +291,13 @@ char* a = json_array_get(str_arr, 0);
 // does not need to match the original
 json_array_set(int_array, 1, 3.14159);
 json_array_set(int_array, 2, strdup("hey"));
+
+// note that you can fetch the number of items with the n_items property.
+// this can be used for loops
+size_t array_len    = array->n_items;
+size_t int_arr_len  = int_arr->n_items;
+size_t str_arr_len  = str_arr->n_items;
+
 
 json_free(&json);
 ```
