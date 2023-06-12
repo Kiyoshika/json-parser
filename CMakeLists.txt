@@ -32,7 +32,21 @@ endif()
 unset(DEBUG_MODE)
 unset(COMPILE_TESTS)
 
+# CONFIGURATION AND INSTALL TARGETS
+# TO MAKE LIBRARY DISTRIBUTABLE
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/jsonConfig.cmake "# empty")
+
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/jsonConfigVersion.cmake 
+  VERSION ${JSON_VERSION}
+  COMPATIBILITY SameMajorVersion)
+
 file(GLOB JSONHEADERS include/*.h)
-install(TARGETS json DESTINATION lib)
-install(FILES ${JSONHEADERS}  DESTINATION include)
-install(FILES jsonConfig.cmake DESTINATION lib/cmake/json)
+install(TARGETS json DESTINATION ${CMAKE_INSTALL_LIBDIR}/json)
+install(FILES ${JSONHEADERS}  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/json)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/jsonConfig.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/json)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/jsonConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/json)
